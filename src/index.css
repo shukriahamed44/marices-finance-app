@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --apple-blue:    #0071E3;
+  --apple-green:   #34C759;
+  --apple-red:     #FF3B30;
+  --apple-orange:  #FF9500;
+  --apple-purple:  #AF52DE;
+  --apple-bg:      #F5F5F7;
+  --apple-label:   #1D1D1F;
+  --apple-label2:  #6E6E73;
+  --apple-label3:  #86868B;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--apple-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--apple-label);
+}
+
+/* Apple-style scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+/* Remove input outlines; we handle focus ourselves */
+input:focus, select:focus, textarea:focus { outline: none; }
+
+/* Smooth transitions everywhere */
+*, *::before, *::after { transition-property: background-color, border-color, box-shadow, opacity, transform; transition-duration: 120ms; transition-timing-function: ease; }
+
+@layer components {
+  .apple-card {
+    @apply bg-white rounded-apple-lg shadow-apple;
+  }
+  .apple-card-hover {
+    @apply apple-card hover:shadow-apple-md cursor-pointer;
+  }
+  .apple-input {
+    @apply w-full bg-apple-surface-2 border border-transparent rounded-apple px-4 py-3 text-apple-label placeholder-apple-label-3 focus:border-apple-blue focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,113,227,0.15)] text-[15px];
+  }
+  .apple-btn-primary {
+    @apply bg-apple-blue text-white font-semibold rounded-apple px-5 py-[10px] text-[15px] hover:bg-[#0077ED] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .apple-btn-secondary {
+    @apply bg-apple-surface-2 text-apple-label font-medium rounded-apple px-5 py-[10px] text-[15px] hover:bg-apple-surface-3 active:scale-[0.98];
+  }
+  .apple-btn-ghost {
+    @apply text-apple-blue font-medium text-[15px] hover:bg-apple-blue-light rounded-apple px-3 py-[6px] active:scale-[0.98];
+  }
+  .apple-label {
+    @apply text-[13px] font-medium text-apple-label-2 uppercase tracking-wide mb-1;
+  }
+  .apple-badge {
+    @apply inline-flex items-center px-2.5 py-[3px] rounded-full text-[12px] font-semibold;
+  }
+}
