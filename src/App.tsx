@@ -10,13 +10,18 @@ import ClientDetail from './pages/ClientDetail'
 import Reports from './pages/Reports'
 import type { ReactNode } from 'react'
 
-function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
-  if (loading) return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black">
-      <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+function Spinner() {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-black gap-4">
+      <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
+      <p className="text-white/30 text-[13px]">Loading…</p>
     </div>
   )
+}
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
