@@ -63,8 +63,93 @@ export default function Landing() {
         </button>
       </nav>
 
-      {/* Bento Grid */}
-      <div className="flex-1 p-5 overflow-hidden">
+      {/* ── MOBILE layout ── */}
+      <div className="md:hidden flex-1 flex flex-col gap-3 p-4 overflow-y-auto">
+        {/* Hero */}
+        <div
+          className="relative overflow-hidden flex flex-col gap-5 p-6 cursor-pointer"
+          style={heroBg}
+          onClick={() => navigate('/login')}
+        >
+          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(94,92,230,0.35) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+          <div>
+            <div className={label}>Matrices · Finance Platform</div>
+            <div className="text-[42px] font-black tracking-[-2px] leading-none mt-3"
+              style={{ background: 'linear-gradient(160deg, #fff 0%, rgba(255,255,255,0.55) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Finances
+            </div>
+            <div className="text-[13px] text-white/40 mt-1 font-light tracking-wide">Investment Management Portal</div>
+          </div>
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[24px] font-bold text-white leading-none">LKR 9.2M+</div>
+              <div className="text-[11px] text-white/40 mt-0.5">Assets under management</div>
+            </div>
+            <button
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white"
+              style={{ background: 'linear-gradient(135deg, rgba(94,92,230,0.9), rgba(0,113,227,0.9))', boxShadow: '0 8px 24px rgba(94,92,230,0.4)', border: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              Open <ArrowUpRight size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+
+        {/* Stat tiles — 3-col row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className={label}>Assets</div>
+            <div className={`${bigNum} text-[22px] mt-2`}>9.2M</div>
+            <div className="text-white/35 text-[11px]">LKR</div>
+          </div>
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className={label}>Clients</div>
+            <div className={`${bigNum} text-[28px] mt-2`}>9</div>
+            <div className="text-white/35 text-[11px]">Investors</div>
+          </div>
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className={label}>Return</div>
+            <div className={`${bigNum} text-[28px] mt-2`} style={{ color: '#34C759' }}>7%</div>
+            <div className="text-white/35 text-[11px]">Annual</div>
+          </div>
+        </div>
+
+        {/* Feature tiles — 2-col grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className="flex items-center justify-between">
+              <div className={label}>Security</div>
+              <Shield size={14} className="text-white/30" />
+            </div>
+            <div className="w-8 h-8 rounded-[9px] flex items-center justify-center mt-3"
+              style={{ background: 'rgba(52,199,89,0.15)', border: '1px solid rgba(52,199,89,0.2)' }}>
+              <Lock size={16} className="text-[#34C759]" />
+            </div>
+            <div className="text-[11px] text-white/40 leading-tight mt-2">Role-based access control</div>
+          </div>
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#34C759]" style={{ boxShadow: '0 0 6px #34C759' }} />
+              <div className={label}>Live</div>
+            </div>
+            <Zap size={24} className="text-[#FF9500] mt-3" strokeWidth={1.5} />
+            <div className="text-[11px] text-white/40 leading-tight mt-2">Real-time balance sync</div>
+          </div>
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className={label}>Reports</div>
+            <BarChart2 size={24} className="text-[#0071E3] mt-3" strokeWidth={1.5} />
+            <div className="text-[11px] text-white/40 leading-tight mt-2">Charts & analytics</div>
+          </div>
+          <div className="flex flex-col justify-between p-4" style={tile()}>
+            <div className={label}>Audit</div>
+            <Activity size={24} className="text-white/30 mt-3" strokeWidth={1.5} />
+            <div className="text-[11px] text-white/40 leading-tight mt-2">Full transaction trail</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP bento grid ── */}
+      <div className="hidden md:flex flex-1 p-5 overflow-hidden">
         <div
           className="h-full w-full grid gap-3"
           style={{
@@ -79,13 +164,10 @@ export default function Landing() {
             style={{ ...heroBg, gridColumn: '2 / 5', gridRow: '1 / 4' }}
             onClick={() => navigate('/login')}
           >
-            {/* Background glow orb */}
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full pointer-events-none"
               style={{ background: 'radial-gradient(circle, rgba(94,92,230,0.35) 0%, transparent 70%)', filter: 'blur(40px)' }} />
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full pointer-events-none"
               style={{ background: 'radial-gradient(circle, rgba(0,113,227,0.3) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-
-            {/* Top label */}
             <div>
               <div className={label}>Matrices · Finance Platform</div>
               <div className="w-12 h-12 rounded-[13px] flex items-center justify-center mt-4"
@@ -93,8 +175,6 @@ export default function Landing() {
                 <TrendingUp size={22} className="text-white" strokeWidth={1.8} />
               </div>
             </div>
-
-            {/* Center wordmark */}
             <div className="text-center">
               <div className="text-[56px] font-black tracking-[-3px] leading-none"
                 style={{ background: 'linear-gradient(160deg, #fff 0%, rgba(255,255,255,0.55) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -104,8 +184,6 @@ export default function Landing() {
                 Investment Management Portal
               </div>
             </div>
-
-            {/* CTA */}
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[28px] font-bold text-white leading-none">LKR 9.2M+</div>
@@ -122,8 +200,6 @@ export default function Landing() {
           </div>
 
           {/* ── Col 1 tiles ──────────────────── */}
-
-          {/* Tile: AUM */}
           <div className="flex flex-col justify-between p-5 overflow-hidden relative" style={{ ...tile(), gridColumn: '1', gridRow: '1' }}>
             <div className={label}>Assets</div>
             <div>
@@ -134,8 +210,6 @@ export default function Landing() {
               <ArrowUpRight size={13} /> Active
             </div>
           </div>
-
-          {/* Tile: Investors */}
           <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '1', gridRow: '2' }}>
             <div className="flex items-center justify-between">
               <div className={label}>Clients</div>
@@ -144,8 +218,6 @@ export default function Landing() {
             <div className={`${bigNum} text-[32px]`}>9</div>
             <div className="text-white/35 text-[12px]">Active investors</div>
           </div>
-
-          {/* Tile: Avg Return */}
           <div className="flex flex-col justify-between p-5 relative overflow-hidden" style={{ ...tile(), gridColumn: '1', gridRow: '3' }}>
             <div className={label}>Avg. Return</div>
             <div className={`${bigNum} text-[36px]`} style={{ color: '#34C759' }}>7%</div>
@@ -153,8 +225,6 @@ export default function Landing() {
           </div>
 
           {/* ── Col 5 tiles ──────────────────── */}
-
-          {/* Tile: Security */}
           <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '5', gridRow: '1' }}>
             <div className="flex items-center justify-between">
               <div className={label}>Security</div>
@@ -166,8 +236,6 @@ export default function Landing() {
             </div>
             <div className="text-[12px] text-white/40 leading-tight">Role-based<br />access control</div>
           </div>
-
-          {/* Tile: Real-time */}
           <div className="flex flex-col justify-between p-5 relative overflow-hidden" style={{ ...tile(), gridColumn: '5', gridRow: '2' }}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#34C759]" style={{ boxShadow: '0 0 6px #34C759' }} />
@@ -176,8 +244,6 @@ export default function Landing() {
             <Zap size={28} className="text-[#FF9500]" strokeWidth={1.5} />
             <div className="text-[12px] text-white/40 leading-tight">Real-time<br />balance sync</div>
           </div>
-
-          {/* Tile: Audit */}
           <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '5', gridRow: '3' }}>
             <div className={label}>Audit</div>
             <Activity size={26} className="text-white/30" strokeWidth={1.5} />
@@ -185,22 +251,16 @@ export default function Landing() {
           </div>
 
           {/* ── Col 6 tiles ──────────────────── */}
-
-          {/* Tile: Reports */}
           <div className="flex flex-col justify-between p-5 relative overflow-hidden" style={{ ...tile(), gridColumn: '6', gridRow: '1' }}>
             <div className={label}>Reports</div>
             <BarChart2 size={26} className="text-[#0071E3]" strokeWidth={1.5} />
             <div className="text-[12px] text-white/40 leading-tight">Charts &<br />analytics</div>
           </div>
-
-          {/* Tile: Export */}
           <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '6', gridRow: '2' }}>
             <div className={label}>Export</div>
             <Download size={26} className="text-white/30" strokeWidth={1.5} />
             <div className="text-[12px] text-white/40 leading-tight">CSV & PDF<br />export</div>
           </div>
-
-          {/* Tile: Fast Entry */}
           <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '6', gridRow: '3' }}>
             <div className={label}>Entry</div>
             <Clock size={26} className="text-[#AF52DE]" strokeWidth={1.5} />
