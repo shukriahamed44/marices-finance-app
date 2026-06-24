@@ -60,7 +60,7 @@ export default function EditTransactionModal({ open, transaction, onClose, onSav
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-[24px] sm:rounded-[20px] shadow-apple-lg overflow-hidden">
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-[24px] sm:rounded-[20px] shadow-apple-lg overflow-hidden max-h-[92vh] flex flex-col">
         <div className="sm:hidden flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-apple-surface-3" />
         </div>
@@ -70,7 +70,7 @@ export default function EditTransactionModal({ open, transaction, onClose, onSav
             <X size={15} className="text-apple-label-2" />
           </button>
         </div>
-        <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSave} className="px-6 py-5 space-y-4 overflow-y-auto">
           {/* Direction badge (readonly) */}
           <div className="flex items-center gap-2">
             <span className={cn('apple-badge text-[12px]', transaction.direction === 'in' ? 'bg-apple-green-light text-apple-green' : 'bg-apple-orange-light text-apple-orange')}>

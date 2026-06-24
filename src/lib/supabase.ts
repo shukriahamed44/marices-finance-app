@@ -3,5 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const url  = import.meta.env.VITE_SUPABASE_URL  as string | undefined
 const key  = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-export const supabase = url && key ? createClient(url, key) : null
-export const USE_MOCK = !supabase
+if (!url || !key) throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env')
+
+export const supabase = createClient(url, key)
+export const USE_MOCK = false

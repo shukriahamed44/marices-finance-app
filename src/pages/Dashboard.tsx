@@ -22,21 +22,22 @@ export default function Dashboard() {
   const today = format(new Date(), 'EEEE, d MMMM yyyy')
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 md:p-8 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between gap-3 mb-6 md:mb-8">
         <div>
           <p className="text-[13px] font-medium text-apple-label-3 uppercase tracking-wide">{today}</p>
-          <h1 className="text-[32px] font-bold text-apple-label tracking-tight leading-tight mt-1">Dashboard</h1>
+          <h1 className="text-[26px] md:text-[32px] font-bold text-apple-label tracking-tight leading-tight mt-1">Dashboard</h1>
         </div>
-        <button onClick={() => setTxModalOpen(true)} className="apple-btn-primary flex items-center gap-2">
+        <button onClick={() => setTxModalOpen(true)} className="apple-btn-primary flex items-center gap-2 shrink-0">
           <Plus size={16} strokeWidth={2.5} />
-          New Transaction
+          <span className="hidden sm:inline">New Transaction</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
         <StatCard
           label="Total AUM"
           value={`LKR ${new Intl.NumberFormat('en-LK', { notation: 'compact', maximumFractionDigits: 2 }).format(totalAUM)}`}

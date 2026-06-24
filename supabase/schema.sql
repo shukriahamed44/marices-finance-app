@@ -61,6 +61,9 @@ create or replace function update_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end; $$;
 
+drop trigger if exists investors_updated_at    on investors;
+drop trigger if exists transactions_updated_at on transactions;
+
 create trigger investors_updated_at    before update on investors    for each row execute function update_updated_at();
 create trigger transactions_updated_at before update on transactions for each row execute function update_updated_at();
 

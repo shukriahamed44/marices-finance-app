@@ -68,7 +68,7 @@ export default function TransactionModal({ open, onClose, defaultInvestorId }: P
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-[24px] sm:rounded-[20px] shadow-apple-lg overflow-hidden">
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-[24px] sm:rounded-[20px] shadow-apple-lg overflow-hidden max-h-[92vh] flex flex-col">
         {/* Drag handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-apple-surface-3" />
@@ -82,7 +82,7 @@ export default function TransactionModal({ open, onClose, defaultInvestorId }: P
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           {/* Direction toggle */}
           <div className="bg-apple-surface-2 rounded-[10px] p-1 flex">
             {(['in', 'out'] as const).map(d => (

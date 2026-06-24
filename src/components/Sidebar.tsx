@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, BarChart2, TrendingUp, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, TrendingUp, LogOut, X } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
@@ -10,7 +10,11 @@ const NAV = [
   { to: '/reports',   icon: BarChart2,       label: 'Reports'   },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { balances } = useApp()
@@ -33,10 +37,19 @@ export default function Sidebar() {
           <div className="w-8 h-8 rounded-[8px] bg-apple-blue flex items-center justify-center shadow-apple">
             <TrendingUp size={16} className="text-white" strokeWidth={2.5} />
           </div>
-          <div>
+          <div className="flex-1">
             <div className="text-[15px] font-semibold text-apple-label leading-none">Matrices</div>
             <div className="text-[11px] text-apple-label-3 leading-none mt-0.5">Finance</div>
           </div>
+          {/* Close button — mobile drawer only */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden w-7 h-7 flex items-center justify-center rounded-full hover:bg-apple-surface-2 text-apple-label-3"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -48,6 +61,7 @@ export default function Sidebar() {
             <NavLink
               key={to}
               to={to}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[14px] font-medium transition-all',
                 active

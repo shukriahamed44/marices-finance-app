@@ -21,21 +21,22 @@ export default function Clients() {
   })
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-4xl">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between gap-3 mb-6 md:mb-8">
         <div>
-          <h1 className="text-[32px] font-bold text-apple-label tracking-tight">Clients</h1>
+          <h1 className="text-[26px] md:text-[32px] font-bold text-apple-label tracking-tight">Clients</h1>
           <p className="text-[15px] text-apple-label-2 mt-1">{balances.filter(b => b.status === 'active').length} active investors</p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="apple-btn-primary flex items-center gap-2">
+        <button onClick={() => setModalOpen(true)} className="apple-btn-primary flex items-center gap-2 shrink-0">
           <Plus size={16} strokeWidth={2.5} />
-          New Client
+          <span className="hidden sm:inline">New Client</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 
       {/* Search + Filter */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-apple-label-3" />
           <input
