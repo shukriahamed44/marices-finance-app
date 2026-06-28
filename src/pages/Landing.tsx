@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import {
   TrendingUp, BarChart2, Shield, Zap, Users, Download,
-  ArrowUpRight, Clock, Lock, ChevronRight, Activity,
+  ArrowUpRight, Wallet, Lock, ChevronRight, Activity,
 } from 'lucide-react'
 
 // ─── Shared glass tile styles ────────────────────────────────
@@ -145,6 +145,34 @@ export default function Landing() {
             <Activity size={24} className="text-white/30 mt-3" strokeWidth={1.5} />
             <div className="text-[11px] text-white/40 leading-tight mt-2">Full transaction trail</div>
           </div>
+
+          {/* Client Finances — freelancer tracker (full width) */}
+          <div
+            className="col-span-2 relative overflow-hidden flex items-center justify-between p-5 cursor-pointer active:scale-[0.98] transition-transform"
+            style={{
+              background: 'linear-gradient(145deg, rgba(0,200,160,0.28) 0%, rgba(0,113,227,0.2) 100%)',
+              backdropFilter: 'blur(28px) saturate(170%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(170%)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              boxShadow: '0 0 40px rgba(0,170,140,0.18), 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+              borderRadius: 20,
+            }}
+            onClick={() => navigate('/cf/auth')}
+          >
+            <div className="absolute top-[-40%] right-[-10%] w-[50%] h-[120%] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(0,200,160,0.3) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[12px] flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <Wallet size={20} className="text-white" strokeWidth={1.8} />
+              </div>
+              <div>
+                <div className="text-[15px] font-semibold text-white leading-none">Client Finances</div>
+                <div className="text-[11px] text-white/55 mt-1">Freelancer payment tracker</div>
+              </div>
+            </div>
+            <ArrowUpRight size={18} className="text-white/60 relative" strokeWidth={2.5} />
+          </div>
         </div>
       </div>
 
@@ -261,10 +289,27 @@ export default function Landing() {
             <Download size={26} className="text-white/30" strokeWidth={1.5} />
             <div className="text-[12px] text-white/40 leading-tight">CSV & PDF<br />export</div>
           </div>
-          <div className="flex flex-col justify-between p-5" style={{ ...tile(), gridColumn: '6', gridRow: '3' }}>
-            <div className={label}>Entry</div>
-            <Clock size={26} className="text-[#AF52DE]" strokeWidth={1.5} />
-            <div className="text-[12px] text-white/40 leading-tight">Fast<br />transaction entry</div>
+          <div
+            className="relative overflow-hidden flex flex-col justify-between p-5 cursor-pointer group transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              gridColumn: '6', gridRow: '3',
+              background: 'linear-gradient(145deg, rgba(0,200,160,0.28) 0%, rgba(0,113,227,0.2) 100%)',
+              backdropFilter: 'blur(28px) saturate(170%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(170%)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              boxShadow: '0 0 40px rgba(0,170,140,0.18), 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+              borderRadius: 20,
+            }}
+            onClick={() => navigate('/cf/auth')}
+          >
+            <div className="absolute top-[-30%] right-[-20%] w-[70%] h-[70%] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(0,200,160,0.3) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+            <div className="flex items-center justify-between relative">
+              <div className={label}>Freelancer</div>
+              <ArrowUpRight size={15} className="text-white/40 group-hover:text-white/80 transition-colors" strokeWidth={2.5} />
+            </div>
+            <Wallet size={26} className="text-white relative" strokeWidth={1.7} />
+            <div className="text-[12px] text-white/70 leading-tight font-medium relative">Client<br />Finances</div>
           </div>
 
         </div>

@@ -8,6 +8,11 @@ import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import ClientDetail from './pages/ClientDetail'
 import Reports from './pages/Reports'
+import CFAuth from './pages/cf/CFAuth'
+import CFLayout from './components/cf/CFLayout'
+import CFDashboard from './pages/cf/CFDashboard'
+import CFClientsList from './pages/cf/CFClientsList'
+import CFClientDetail from './pages/cf/CFClientDetail'
 import type { ReactNode } from 'react'
 
 function Spinner() {
@@ -43,6 +48,16 @@ function AppRoutes() {
         <Route path="/clients/:id"     element={<ClientDetail />} />
         <Route path="/reports"         element={<Reports />} />
         <Route path="*"                element={<Navigate to="/dashboard" replace />} />
+      </Route>
+
+      {/* ── Client Finances (standalone freelancer tracker) ── */}
+      <Route path="/cf/auth" element={<CFAuth />} />
+      <Route path="/cf" element={<CFLayout />}>
+        <Route index             element={<Navigate to="/cf/dashboard" replace />} />
+        <Route path="dashboard"  element={<CFDashboard />} />
+        <Route path="clients"    element={<CFClientsList />} />
+        <Route path="clients/:id" element={<CFClientDetail />} />
+        <Route path="*"          element={<Navigate to="/cf/dashboard" replace />} />
       </Route>
     </Routes>
   )
