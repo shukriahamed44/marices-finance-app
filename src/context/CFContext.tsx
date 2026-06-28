@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, t
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import type {
-  CFClient, CFJob, CFTransaction, CFDirection,
+  CFClient, CFJob, CFTransaction, CFDirection, CFDebt,
   CFClientStats, CFJobStats, CFTransactionWithClient,
 } from '../lib/cf-types'
 
@@ -10,17 +10,23 @@ interface CFContextValue {
   clients: CFClient[]
   jobs: CFJob[]
   transactions: CFTransaction[]
+  debts: CFDebt[]
   loading: boolean
 
   totalBalance: number
   totalIn: number
   totalOut: number
+  totalOwed: number
   recentTransactions: CFTransactionWithClient[]
 
-  addClient: (name: string) => Promise<void>
+  loadError: string | null
+  addClient: (name: string) => Promise<string | null>
   deleteClient: (id: string) => Promise<void>
   addJob: (clientId: string, title: string, totalAmount: number) => Promise<void>
   deleteJob: (id: string) => Promise<void>
+  addDebt: (name: string, amount: number, note?: string) => Promise<string | null>
+  updateDebt: (id: string, patch: Partial<Pick<CFDebt, 'name' | 'amount' | 'note' | 'settled'>>) => Promise<void>
+  deleteDebt: (id: string) => Promise<void>
   addTransaction: (tx: {
     direction: CFDirection
     amount: number
@@ -43,7 +49,9 @@ export function CFProvider({ children }: { children: ReactNode }) {
   const [clients,      setClients]      = useState<CFClient[]>([])
   const [jobs,         setJobs]         = useState<CFJob[]>([])
   const [transactions, setTransactions] = useState<CFTransaction[]>([])
+  const [debts,        setDebts]        = useState<CFDebt[]>([])
   const [loading,      setLoading]      = useState(true)
+  const [loadError,    setLoadError]    = useState<string | null>(null)
 
   // ── Load all data for the signed-in user (RLS scopes it too) ──
   useEffect(() => {
@@ -51,15 +59,24 @@ export function CFProvider({ children }: { children: ReactNode }) {
     let active = true
     async function load() {
       setLoading(true)
-      const [cRes, jRes, tRes] = await Promise.all([
+      const [cRes, jRes, tRes, dRes] = await Promise.all([
         supabase.from('cf_clients').select('*').order('created_at', { ascending: true }),
         supabase.from('cf_jobs').select('*').order('created_at', { ascending: false }),
         supabase.from('cf_transactions').select('*').order('created_at', { ascending: false }),
+        supabase.from('cf_debts').select('*').order('created_at', { ascending: false }),
       ])
       if (!active) return
+      const err = cRes.error || jRes.error || tRes.error || dRes.error
+      if (err) {
+        console.error('[CF] load failed:', err)
+        setLoadError(err.message)
+      } else {
+        setLoadError(null)
+      }
       if (cRes.data) setClients(cRes.data as CFClient[])
       if (jRes.data) setJobs(jRes.data as CFJob[])
       if (tRes.data) setTransactions(tRes.data as CFTransaction[])
+      if (dRes.data) setDebts(dRes.data as CFDebt[])
       setLoading(false)
     }
     load()
@@ -70,6 +87,10 @@ export function CFProvider({ children }: { children: ReactNode }) {
   const totalIn  = useMemo(() => transactions.filter(t => t.direction === 'in').reduce((s, t) => s + Number(t.amount), 0), [transactions])
   const totalOut = useMemo(() => transactions.filter(t => t.direction === 'out').reduce((s, t) => s + Number(t.amount), 0), [transactions])
   const totalBalance = totalIn - totalOut
+
+  const totalOwed = useMemo(() =>
+    debts.filter(d => !d.settled).reduce((s, d) => s + Number(d.amount), 0),
+    [debts])
 
   const recentTransactions: CFTransactionWithClient[] = useMemo(() =>
     [...transactions]
@@ -82,11 +103,16 @@ export function CFProvider({ children }: { children: ReactNode }) {
     [transactions, clients, jobs])
 
   // ── Clients ─────────────────────────────────────────────────
-  const addClient = useCallback(async (name: string) => {
-    if (!user) return
+  const addClient = useCallback(async (name: string): Promise<string | null> => {
+    if (!user) return 'You must be signed in.'
     const { data, error } = await supabase
       .from('cf_clients').insert({ name, user_id: user.id }).select().single()
-    if (!error && data) setClients(prev => [...prev, data as CFClient])
+    if (error) {
+      console.error('[CF] addClient failed:', error)
+      return error.message
+    }
+    if (data) setClients(prev => [...prev, data as CFClient])
+    return null
   }, [user])
 
   const deleteClient = useCallback(async (id: string) => {
@@ -114,6 +140,29 @@ export function CFProvider({ children }: { children: ReactNode }) {
       setJobs(prev => prev.filter(j => j.id !== id))
       setTransactions(prev => prev.map(t => t.job_id === id ? { ...t, job_id: null } : t))
     }
+  }, [])
+
+  // ── Debts (simple name + amount entries) ────────────────────
+  const addDebt = useCallback(async (name: string, amount: number, note = ''): Promise<string | null> => {
+    if (!user) return 'You must be signed in.'
+    const { data, error } = await supabase
+      .from('cf_debts').insert({ name, amount, note, user_id: user.id }).select().single()
+    if (error) {
+      console.error('[CF] addDebt failed:', error)
+      return error.message
+    }
+    if (data) setDebts(prev => [data as CFDebt, ...prev])
+    return null
+  }, [user])
+
+  const updateDebt = useCallback(async (id: string, patch: Partial<Pick<CFDebt, 'name' | 'amount' | 'note' | 'settled'>>) => {
+    const { data, error } = await supabase.from('cf_debts').update(patch).eq('id', id).select().single()
+    if (!error && data) setDebts(prev => prev.map(d => d.id === id ? data as CFDebt : d))
+  }, [])
+
+  const deleteDebt = useCallback(async (id: string) => {
+    const { error } = await supabase.from('cf_debts').delete().eq('id', id)
+    if (!error) setDebts(prev => prev.filter(d => d.id !== id))
   }, [])
 
   // ── Transactions ────────────────────────────────────────────
@@ -166,9 +215,9 @@ export function CFProvider({ children }: { children: ReactNode }) {
 
   return (
     <CFContext.Provider value={{
-      clients, jobs, transactions, loading,
-      totalBalance, totalIn, totalOut, recentTransactions,
-      addClient, deleteClient, addJob, deleteJob, addTransaction, deleteTransaction,
+      clients, jobs, transactions, debts, loading, loadError,
+      totalBalance, totalIn, totalOut, totalOwed, recentTransactions,
+      addClient, deleteClient, addJob, deleteJob, addDebt, updateDebt, deleteDebt, addTransaction, deleteTransaction,
       getClientById, getJobsByClient, getClientStats, getJobStats,
     }}>
       {children}

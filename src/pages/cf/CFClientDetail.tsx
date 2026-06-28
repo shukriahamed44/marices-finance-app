@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
-import { ChevronLeft, Plus, Trash2, Briefcase, CheckCircle2, X, CreditCard } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Plus, Trash2, Briefcase, CheckCircle2, X, CreditCard, ArrowDownLeft } from 'lucide-react'
 import { useCF } from '../../context/CFContext'
-import { formatCurrency } from '../../lib/utils'
+import { formatCurrency, formatDate } from '../../lib/utils'
 import { getInitials, getAvatarColor } from '../../lib/utils'
 import CFAddMoneyModal from '../../components/cf/CFAddMoneyModal'
 import { cfTile, cfHero, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_GREEN, CF_AMBER } from '../../components/cf/cfStyles'
@@ -10,13 +10,14 @@ import { cfTile, cfHero, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_GREEN, 
 export default function CFClientDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getClientById, getJobsByClient, getClientStats, getJobStats, addJob, deleteJob, deleteClient, loading } = useCF()
+  const { getClientById, getJobsByClient, getClientStats, addJob, deleteJob, deleteClient, transactions, deleteTransaction, loading } = useCF()
 
   const [addingJob, setAddingJob] = useState(false)
   const [title, setTitle]         = useState('')
   const [total, setTotal]         = useState('')
   const [saving, setSaving]       = useState(false)
-  const [payFor, setPayFor]       = useState<{ jobId: string } | null>(null)
+  const [paying, setPaying]       = useState(false)
+  const [showPaid, setShowPaid]   = useState(false)
 
   if (loading) {
     return (
@@ -47,6 +48,74 @@ export default function CFClientDetail() {
       await deleteClient(client!.id)
       navigate('/cf/clients')
     }
+  }
+
+  // FIFO allocation: spread the client's total payments across jobs, oldest first.
+  // A job is "paid" once cumulative payments cover it; the boundary job is part-paid.
+  const jobsAsc = [...jobs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  let pool = stats.paid
+  const alloc: Record<string, { paid: number; outstanding: number; isPaid: boolean }> = {}
+  for (const j of jobsAsc) {
+    const tot = Number(j.total_amount)
+    const applied = Math.min(pool, tot)
+    pool -= applied
+    alloc[j.id] = { paid: applied, outstanding: Math.max(tot - applied, 0), isPaid: tot > 0 && applied >= tot }
+  }
+  const openJobs = jobs.filter(j => !alloc[j.id].isPaid)
+  const paidJobs = jobs.filter(j => alloc[j.id].isPaid)
+  const payments = transactions
+    .filter(t => t.client_id === client.id && t.direction === 'in')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+  function renderJobRow(j: typeof jobs[number], i: number) {
+    const a = alloc[j.id]
+    const partPaid = !a.isPaid && a.paid > 0
+    return (
+      <div key={j.id} className={`group flex items-center gap-3 px-4 md:px-5 py-3.5 hover:bg-white/[0.04] transition-colors ${i !== 0 ? 'border-t border-white/[0.06]' : ''}`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={`text-[15px] font-semibold truncate ${a.isPaid ? 'text-white/70' : 'text-white'}`}>{j.title}</span>
+            {a.isPaid && <CheckCircle2 size={13} style={{ color: CF_GREEN }} className="shrink-0" />}
+          </div>
+          <div className="text-[12px] text-white/35 mt-0.5">{formatDate(j.created_at)}</div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[15px] font-semibold text-white leading-none">LKR {formatCurrency(Number(j.total_amount))}</div>
+          <div className="text-[12px] mt-1 leading-none" style={{ color: a.isPaid ? CF_GREEN : CF_AMBER }}>
+            {a.isPaid ? 'Paid' : partPaid ? `Outstanding ${formatCurrency(a.outstanding)} · part-paid` : `Outstanding ${formatCurrency(a.outstanding)}`}
+          </div>
+        </div>
+        <button
+          onClick={() => { if (confirm(`Delete job "${j.title}"?`)) deleteJob(j.id) }}
+          className="w-7 h-7 flex items-center justify-center rounded-full text-white/15 hover:text-[#FF453A] hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 shrink-0"
+          title="Delete job"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    )
+  }
+
+  function renderPaymentRow(t: typeof payments[number], i: number) {
+    return (
+      <div key={t.id} className={`group flex items-center gap-3 px-4 md:px-5 py-3.5 hover:bg-white/[0.04] transition-colors ${i !== 0 ? 'border-t border-white/[0.06]' : ''}`}>
+        <div className="w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0" style={{ background: `${CF_GREEN}1f`, border: `1px solid ${CF_GREEN}33` }}>
+          <ArrowDownLeft size={16} style={{ color: CF_GREEN }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-medium text-white truncate">{t.note || 'Payment received'}</div>
+          <div className="text-[12px] text-white/35">{formatDate(t.created_at)}</div>
+        </div>
+        <div className="text-[14px] font-semibold shrink-0" style={{ color: CF_GREEN }}>+{formatCurrency(Number(t.amount))}</div>
+        <button
+          onClick={() => { if (confirm('Delete this payment?')) deleteTransaction(t.id) }}
+          className="w-7 h-7 flex items-center justify-center rounded-full text-white/15 hover:text-[#FF453A] hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 shrink-0"
+          title="Delete payment"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -94,7 +163,7 @@ export default function CFClientDetail() {
       {/* Quick payment + add job */}
       <div className="flex gap-3 mb-4">
         <button
-          onClick={() => setPayFor({ jobId: '' })}
+          onClick={() => setPaying(true)}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-[14px] font-semibold text-white transition-all active:scale-[0.98]"
           style={{ background: `linear-gradient(135deg, ${CF_GREEN}, ${CF_GREEN}cc)`, boxShadow: `0 8px 24px ${CF_GREEN}44, inset 0 1px 0 rgba(255,255,255,0.2)`, border: '1px solid rgba(255,255,255,0.15)' }}
         >
@@ -109,13 +178,13 @@ export default function CFClientDetail() {
         </button>
       </div>
 
-      {/* Jobs */}
+      {/* Jobs & payments ledger */}
       <div className="flex items-center gap-2 mb-3 mt-6">
         <Briefcase size={16} className="text-white/50" />
-        <h2 className="text-[16px] font-semibold text-white">Jobs</h2>
+        <h2 className="text-[16px] font-semibold text-white">Jobs & Payments</h2>
       </div>
 
-      {jobs.length === 0 ? (
+      {jobs.length === 0 && payments.length === 0 ? (
         <div className="py-14 text-center" style={cfTile}>
           <div className="text-white/40 text-[14px]">No jobs yet for this client.</div>
           <button onClick={() => setAddingJob(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[13px] font-semibold text-white" style={cfPrimaryBtn}>
@@ -123,61 +192,44 @@ export default function CFClientDetail() {
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {jobs.map(j => {
-            const js = getJobStats(j.id)
-            const pct = Number(j.total_amount) > 0 ? Math.min(100, (js.paid / Number(j.total_amount)) * 100) : 0
-            return (
-              <div key={j.id} className="p-5 group" style={cfTile}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-[16px] font-semibold text-white truncate">{j.title}</h3>
-                      {js.isPaid && (
-                        <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                          style={{ background: `${CF_GREEN}22`, color: CF_GREEN, border: `1px solid ${CF_GREEN}40` }}>
-                          <CheckCircle2 size={11} /> Paid
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[13px] text-white/40 mt-0.5">Total: LKR {formatCurrency(Number(j.total_amount))}</div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {!js.isPaid && (
-                      <button
-                        onClick={() => setPayFor({ jobId: j.id })}
-                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white transition-all active:scale-[0.97]"
-                        style={{ background: `${CF_GREEN}26`, border: `1px solid ${CF_GREEN}44`, color: CF_GREEN }}
-                      >
-                        Add Payment
-                      </button>
-                    )}
-                    <button
-                      onClick={() => { if (confirm(`Delete job "${j.title}"?`)) deleteJob(j.id) }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full text-white/20 hover:text-[#FF453A] hover:bg-white/10 transition-all"
-                      title="Delete job"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
+        <>
+        {/* Outstanding jobs (still owed) */}
+        {openJobs.length > 0 && (
+          <div className="overflow-hidden" style={cfTile}>
+            {openJobs.map((j, i) => renderJobRow(j, i))}
+          </div>
+        )}
 
-                {/* Progress */}
-                <div className="mt-4">
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${CF_GREEN}, #00C8A0)` }} />
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-[12px]">
-                    <span style={{ color: CF_GREEN }}>Paid {formatCurrency(js.paid)}</span>
-                    <span style={{ color: js.outstanding > 0 ? CF_AMBER : CF_GREEN }}>
-                      {js.outstanding > 0 ? `Outstanding ${formatCurrency(js.outstanding)}` : 'Fully paid'}
-                    </span>
-                  </div>
-                </div>
+        {/* Payments received — record rows */}
+        {payments.length > 0 && (
+          <div className={`overflow-hidden ${openJobs.length > 0 ? 'mt-3' : ''}`} style={cfTile}>
+            {payments.map((t, i) => renderPaymentRow(t, i))}
+          </div>
+        )}
+
+        {/* Paid jobs — collapsed to one line, expandable (green outline) */}
+        {paidJobs.length > 0 && (
+          <div className={(openJobs.length > 0 || payments.length > 0) ? 'mt-3' : ''}>
+            <button
+              onClick={() => setShowPaid(s => !s)}
+              className="w-full flex items-center gap-3 px-4 md:px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+              style={{ ...cfTile, border: `1px solid ${CF_GREEN}44` }}
+            >
+              <CheckCircle2 size={16} style={{ color: CF_GREEN }} className="shrink-0" />
+              <span className="text-[14px] font-semibold text-white">Paid jobs</span>
+              <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${CF_GREEN}22`, color: CF_GREEN }}>{paidJobs.length}</span>
+              <span className="flex-1" />
+              <ChevronDown size={16} className="text-white/40 transition-transform shrink-0" style={{ transform: showPaid ? 'rotate(180deg)' : 'none' }} />
+            </button>
+
+            {showPaid && (
+              <div className="overflow-hidden mt-2" style={{ ...cfTile, border: `1px solid ${CF_GREEN}55`, boxShadow: `0 0 0 1px ${CF_GREEN}22, 0 4px 24px rgba(0,0,0,0.35)` }}>
+                {paidJobs.map((j, i) => renderJobRow(j, i))}
               </div>
-            )
-          })}
-        </div>
+            )}
+          </div>
+        )}
+        </>
       )}
 
       {/* Add job modal */}
@@ -223,13 +275,12 @@ export default function CFClientDetail() {
         </div>
       )}
 
-      {/* Payment modal (money in, preset to this client + optional job) */}
-      {payFor && (
+      {/* Payment modal (money in, applied across this client's jobs oldest-first) */}
+      {paying && (
         <CFAddMoneyModal
           direction="in"
           presetClientId={client.id}
-          presetJobId={payFor.jobId || undefined}
-          onClose={() => setPayFor(null)}
+          onClose={() => setPaying(false)}
         />
       )}
     </div>

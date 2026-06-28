@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Wallet, LogOut, X, Menu } from 'lucide-react'
+import { LayoutDashboard, Users, HandCoins, Wallet, LogOut, X, Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { CFProvider } from '../../context/CFContext'
 import { cfPageBg, cfTile } from './cfStyles'
@@ -8,6 +8,7 @@ import { cfPageBg, cfTile } from './cfStyles'
 const NAV = [
   { to: '/cf/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/cf/clients',   icon: Users,           label: 'Clients'   },
+  { to: '/cf/debts',     icon: HandCoins,       label: 'Debts'     },
 ]
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {

@@ -19,6 +19,16 @@ export interface CFJob {
 
 export type CFDirection = 'in' | 'out'
 
+export interface CFDebt {
+  id: string
+  user_id: string
+  name: string
+  amount: number
+  note: string
+  settled: boolean
+  created_at: string
+}
+
 export interface CFTransaction {
   id: string
   user_id: string

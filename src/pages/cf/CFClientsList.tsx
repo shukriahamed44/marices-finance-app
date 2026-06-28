@@ -8,17 +8,19 @@ import { cfTile, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_GREEN, CF_AMBER
 
 export default function CFClientsList() {
   const navigate = useNavigate()
-  const { clients, getClientStats, addClient, loading } = useCF()
+  const { clients, getClientStats, addClient, loading, loadError } = useCF()
   const [adding, setAdding]   = useState(false)
   const [name, setName]       = useState('')
   const [saving, setSaving]   = useState(false)
+  const [error, setError]     = useState('')
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    setSaving(true)
-    await addClient(name.trim())
+    setError(''); setSaving(true)
+    const err = await addClient(name.trim())
     setSaving(false)
+    if (err) { setError(err); return }
     setName('')
     setAdding(false)
   }
@@ -47,6 +49,13 @@ export default function CFClientsList() {
           <Plus size={16} strokeWidth={2.5} /> <span className="hidden sm:inline">Add Client</span>
         </button>
       </div>
+
+      {loadError && (
+        <div className="mb-4 px-4 py-3 rounded-[14px] text-[13px] text-red-300" style={{ background: 'rgba(255,59,48,0.12)', border: '1px solid rgba(255,59,48,0.25)' }}>
+          Couldn't load your data: {loadError}
+          <div className="text-red-300/70 text-[12px] mt-1">If this mentions a missing table, run the relevant SQL in <code>supabase/</code> (<code>cf_schema.sql</code> for clients/jobs, <code>cf_debt_schema.sql</code> for debts) in your Supabase SQL Editor.</div>
+        </div>
+      )}
 
       {clients.length === 0 ? (
         <div className="py-20 flex flex-col items-center text-center" style={cfTile}>
@@ -135,6 +144,11 @@ export default function CFClientsList() {
                   autoFocus
                 />
               </div>
+              {error && (
+                <div className="px-4 py-3 rounded-[12px] text-[13px] text-red-300" style={{ background: 'rgba(255,59,48,0.12)', border: '1px solid rgba(255,59,48,0.2)' }}>
+                  {error}
+                </div>
+              )}
               <button type="submit" disabled={saving} className="w-full py-3.5 rounded-[14px] text-[16px] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40" style={cfPrimaryBtn}>
                 {saving ? 'Adding…' : 'Add Client'}
               </button>
