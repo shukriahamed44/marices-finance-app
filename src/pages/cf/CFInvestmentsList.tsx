@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, TrendingUp, X, Trash2, Pencil, ChevronDown, ArrowUpRight, ArrowDownRight, Minus, Target, Calendar } from 'lucide-react'
+import { Plus, TrendingUp, X, Trash2, Pencil, ChevronDown, ArrowUpRight, ArrowDownRight, Minus, Target, Calendar, Lock } from 'lucide-react'
 import { useCF } from '../../context/CFContext'
 import { formatCurrency, formatDate } from '../../lib/utils'
 import {
@@ -12,11 +12,16 @@ const SECTORS: CFInvestmentSector[] = [
   'Crypto', 'Equity', 'Commodity', 'Forex', 'Index', 'Private Deal', 'Real Estate', 'Other',
 ]
 
+// 'closed' is not in the status picker — it's set via the "Close Position" toggle
+const OPEN_STATUSES = ['active', 'gained', 'lost', 'partial'] as const
+type OpenStatus = typeof OPEN_STATUSES[number]
+
 const STATUS_CONFIG: Record<CFInvestmentStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  active:  { label: 'Active',   color: CF_BLUE,  bg: 'rgba(10,132,255,0.15)',  icon: Target },
-  gained:  { label: 'Gained',   color: CF_GREEN, bg: 'rgba(52,199,89,0.15)',   icon: ArrowUpRight },
-  lost:    { label: 'Lost',     color: CF_RED,   bg: 'rgba(255,69,58,0.15)',   icon: ArrowDownRight },
-  partial: { label: 'Partial',  color: CF_AMBER, bg: 'rgba(255,159,10,0.15)', icon: Minus },
+  active:  { label: 'Active',  color: CF_BLUE,                    bg: 'rgba(10,132,255,0.15)',   icon: Target        },
+  gained:  { label: 'Gained',  color: CF_GREEN,                   bg: 'rgba(52,199,89,0.15)',    icon: ArrowUpRight  },
+  lost:    { label: 'Lost',    color: CF_RED,                     bg: 'rgba(255,69,58,0.15)',    icon: ArrowDownRight},
+  partial: { label: 'Partial', color: CF_AMBER,                   bg: 'rgba(255,159,10,0.15)',   icon: Minus         },
+  closed:  { label: 'Closed',  color: 'rgba(255,255,255,0.35)',   bg: 'rgba(255,255,255,0.06)',  icon: Lock          },
 }
 
 const SECTOR_COLORS: Record<CFInvestmentSector, string> = {
@@ -38,6 +43,7 @@ const FILTERS: { id: FilterTab; label: string }[] = [
   { id: 'gained',  label: 'Gained'  },
   { id: 'partial', label: 'Partial' },
   { id: 'lost',    label: 'Lost'    },
+  { id: 'closed',  label: 'Closed'  },
 ]
 
 const BLANK = (): Omit<CFInvestment, 'id' | 'user_id' | 'created_at'> => ({
@@ -50,14 +56,24 @@ const BLANK = (): Omit<CFInvestment, 'id' | 'user_id' | 'created_at'> => ({
 export default function CFInvestmentsList() {
   const { investments, addInvestment, updateInvestment, deleteInvestment, loading, loadError } = useCF()
 
-  const [filter, setFilter]   = useState<FilterTab>('all')
-  const [editing, setEditing] = useState<CFInvestment | 'new' | null>(null)
-  const [form, setForm]       = useState(BLANK())
-  const [error, setError]     = useState('')
-  const [saving, setSaving]   = useState(false)
+  const [filter, setFilter]     = useState<FilterTab>('all')
+  const [editing, setEditing]   = useState<CFInvestment | 'new' | null>(null)
+  const [form, setForm]         = useState(BLANK())
+  // tracks the open status independently; 'closed' checkbox overlays on top
+  const [openStatus, setOpenStatus] = useState<OpenStatus>('active')
+  const [isClosed, setIsClosed] = useState(false)
+  const [error, setError]       = useState('')
+  const [saving, setSaving]     = useState(false)
 
-  function openNew() { setForm(BLANK()); setError(''); setEditing('new') }
+  function openNew() {
+    setForm(BLANK()); setOpenStatus('active'); setIsClosed(false); setError(''); setEditing('new')
+  }
   function openEdit(inv: CFInvestment) {
+    const os: OpenStatus = inv.status === 'closed'
+      ? (inv.actual_return != null ? (inv.actual_return >= inv.amount_invested ? 'gained' : 'lost') : 'gained')
+      : inv.status as OpenStatus
+    setOpenStatus(os)
+    setIsClosed(inv.status === 'closed')
     setForm({
       entity: inv.entity, brief: inv.brief, sector: inv.sector,
       amount_invested: inv.amount_invested, expected_return: inv.expected_return,
@@ -78,6 +94,7 @@ export default function CFInvestmentsList() {
     if (!form.entity.trim()) return setError('Enter an entity name.')
     const amt = Number(form.amount_invested)
     if (!amt || amt <= 0) return setError('Enter a valid invested amount.')
+    const finalStatus: CFInvestmentStatus = isClosed ? 'closed' : openStatus
     setError(''); setSaving(true)
     const payload = {
       ...form,
@@ -87,6 +104,7 @@ export default function CFInvestmentsList() {
       amount_invested: amt,
       expected_return: form.expected_return ? Number(form.expected_return) : null,
       actual_return: form.actual_return != null ? Number(form.actual_return) : null,
+      status: finalStatus,
     }
     let err: string | null = null
     if (editing === 'new') {
@@ -102,17 +120,24 @@ export default function CFInvestmentsList() {
     close()
   }
 
+  const showActualReturn = openStatus !== 'active'
+
   // ── Derived stats ──────────────────────────────────────────
   const totalDeployed = useMemo(() => investments.reduce((s, i) => s + Number(i.amount_invested), 0), [investments])
   const totalReturned = useMemo(() =>
-    investments.filter(i => i.status === 'gained' || i.status === 'partial')
+    investments
+      .filter(i => i.status === 'gained' || i.status === 'partial' || i.status === 'closed')
       .reduce((s, i) => s + Number(i.actual_return ?? 0), 0), [investments])
-  const activeCount   = useMemo(() => investments.filter(i => i.status === 'active').length, [investments])
-  const portfolioROI  = totalDeployed > 0 ? ((totalReturned - totalDeployed) / totalDeployed) * 100 : null
+  const activeCount = useMemo(() => investments.filter(i => i.status === 'active').length, [investments])
+  const portfolioROI = totalDeployed > 0 ? ((totalReturned - totalDeployed) / totalDeployed) * 100 : null
 
   const filtered = useMemo(() =>
     filter === 'all' ? investments : investments.filter(i => i.status === filter),
     [investments, filter])
+
+  // split for rendering: open positions full card, closed as compact rows
+  const openPositions   = filtered.filter(i => i.status !== 'closed')
+  const closedPositions = filtered.filter(i => i.status === 'closed')
 
   if (loading) {
     return (
@@ -149,9 +174,9 @@ export default function CFInvestmentsList() {
         <div className="absolute top-[-20%] right-[-5%] w-[45%] h-[80%] rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(0,200,160,0.28) 0%, transparent 70%)', filter: 'blur(50px)' }} />
         <div className="relative grid grid-cols-2 md:grid-cols-4 gap-6">
-          <StatCell label="Total Deployed" value={`LKR ${formatCurrency(totalDeployed)}`} color="rgba(255,255,255,0.85)" />
-          <StatCell label="Returned" value={`LKR ${formatCurrency(totalReturned)}`} color={totalReturned > 0 ? CF_GREEN : 'rgba(255,255,255,0.85)'} />
-          <StatCell label="Active Positions" value={String(activeCount)} color={CF_BLUE} />
+          <StatCell label="Total Deployed"  value={`LKR ${formatCurrency(totalDeployed)}`} color="rgba(255,255,255,0.85)" />
+          <StatCell label="Returned"        value={`LKR ${formatCurrency(totalReturned)}`} color={totalReturned > 0 ? CF_GREEN : 'rgba(255,255,255,0.85)'} />
+          <StatCell label="Active Positions" value={String(activeCount)}                   color={CF_BLUE} />
           <StatCell
             label="Portfolio ROI"
             value={portfolioROI != null ? `${portfolioROI >= 0 ? '+' : ''}${portfolioROI.toFixed(1)}%` : '—'}
@@ -163,14 +188,11 @@ export default function CFInvestmentsList() {
       {/* Filter tabs */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {FILTERS.map(f => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
+          <button key={f.id} onClick={() => setFilter(f.id)}
             className="px-3.5 py-1.5 rounded-[10px] text-[13px] font-medium transition-all"
             style={filter === f.id
               ? { background: 'linear-gradient(135deg, rgba(0,200,160,0.85), rgba(0,113,227,0.85))', color: '#fff' }
-              : { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
+              : { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
             {f.label}
           </button>
         ))}
@@ -194,16 +216,36 @@ export default function CFInvestmentsList() {
           <div className="text-white/40 text-[14px]">No {filter} positions.</div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filtered.map(inv => (
-            <InvestmentCard
-              key={inv.id}
-              inv={inv}
-              onEdit={() => openEdit(inv)}
-              onDelete={() => { if (confirm(`Delete investment in ${inv.entity}?`)) deleteInvestment(inv.id) }}
-            />
-          ))}
-        </div>
+        <>
+          {/* Open positions — full cards */}
+          {openPositions.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              {openPositions.map(inv => (
+                <InvestmentCard key={inv.id} inv={inv}
+                  onEdit={() => openEdit(inv)}
+                  onDelete={() => { if (confirm(`Delete investment in ${inv.entity}?`)) deleteInvestment(inv.id) }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Closed positions — compact rows */}
+          {closedPositions.length > 0 && (
+            <>
+              {filter !== 'closed' && openPositions.length > 0 && (
+                <div className={`${cfLabel} mb-2 mt-2`}>Closed</div>
+              )}
+              <div className="overflow-hidden" style={cfTile}>
+                {closedPositions.map((inv, i) => (
+                  <ClosedRow key={inv.id} inv={inv} i={i}
+                    onEdit={() => openEdit(inv)}
+                    onDelete={() => { if (confirm(`Delete investment in ${inv.entity}?`)) deleteInvestment(inv.id) }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {/* Add / Edit modal */}
@@ -240,7 +282,7 @@ export default function CFInvestmentsList() {
                   className={`w-full px-4 py-3 text-[15px] placeholder-white/20 ${cfInputRing}`} style={cfInput} />
               </div>
 
-              {/* Sector + Invested At row */}
+              {/* Sector + Invested At */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={`block ${cfLabel} mb-1.5`}>Sector</label>
@@ -271,10 +313,10 @@ export default function CFInvestmentsList() {
                 </div>
               </div>
 
-              {/* Expected return + Target date row */}
+              {/* Expected return + Target date */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={`block ${cfLabel} mb-1.5`}>Expected Return <span className="text-white/25 normal-case tracking-normal">(optional)</span></label>
+                  <label className={`block ${cfLabel} mb-1.5`}>Expected Return <span className="text-white/25 normal-case tracking-normal">(opt)</span></label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-[13px] font-medium">LKR</span>
                     <input type="number" inputMode="decimal" step="0.01" min="0"
@@ -284,24 +326,25 @@ export default function CFInvestmentsList() {
                   </div>
                 </div>
                 <div>
-                  <label className={`block ${cfLabel} mb-1.5`}>Target Date <span className="text-white/25 normal-case tracking-normal">(optional)</span></label>
+                  <label className={`block ${cfLabel} mb-1.5`}>Target Date <span className="text-white/25 normal-case tracking-normal">(opt)</span></label>
                   <input type="date" value={form.target_date ?? ''} onChange={e => patch('target_date', e.target.value || null)}
                     className={`w-full px-4 py-3 text-[15px] ${cfInputRing}`} style={{ ...cfInput, colorScheme: 'dark' }} />
                 </div>
               </div>
 
-              {/* Status */}
+              {/* Status — only the 4 open statuses */}
               <div>
                 <label className={`block ${cfLabel} mb-2`}>Status</label>
                 <div className="grid grid-cols-4 gap-2">
-                  {(Object.keys(STATUS_CONFIG) as CFInvestmentStatus[]).map(s => {
+                  {OPEN_STATUSES.map(s => {
                     const cfg = STATUS_CONFIG[s]
                     const Icon = cfg.icon
-                    const active = form.status === s
+                    const isActive = openStatus === s
                     return (
-                      <button key={s} type="button" onClick={() => patch('status', s)}
+                      <button key={s} type="button"
+                        onClick={() => { setOpenStatus(s); if (s === 'active') setIsClosed(false) }}
                         className="flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-[12px] text-[12px] font-semibold transition-all"
-                        style={active
+                        style={isActive
                           ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}55` }
                           : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <Icon size={14} strokeWidth={2.2} />
@@ -313,7 +356,7 @@ export default function CFInvestmentsList() {
               </div>
 
               {/* Actual return — show when not active */}
-              {form.status !== 'active' && (
+              {showActualReturn && (
                 <div>
                   <label className={`block ${cfLabel} mb-1.5`}>Actual Return</label>
                   <div className="relative">
@@ -324,6 +367,32 @@ export default function CFInvestmentsList() {
                       className={`w-full pl-14 pr-4 py-3 text-[15px] placeholder-white/20 ${cfInputRing}`} style={cfInput} />
                   </div>
                 </div>
+              )}
+
+              {/* Close Position toggle — only shown when status is not active */}
+              {openStatus !== 'active' && (
+                <button
+                  type="button"
+                  onClick={() => setIsClosed(prev => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-[14px] transition-all"
+                  style={isClosed
+                    ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }
+                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Lock size={14} className={isClosed ? 'text-white/70' : 'text-white/25'} />
+                    <div className="text-left">
+                      <div className={`text-[14px] font-semibold ${isClosed ? 'text-white' : 'text-white/40'}`}>Close Position</div>
+                      <div className="text-[11px] text-white/25">Mark this investment as fully settled</div>
+                    </div>
+                  </div>
+                  {/* Toggle pill */}
+                  <div className="w-10 h-6 rounded-full relative transition-all shrink-0"
+                    style={{ background: isClosed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.1)' }}>
+                    <div className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all"
+                      style={{ left: isClosed ? '18px' : '3px', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+                  </div>
+                </button>
               )}
 
               {/* Notes */}
@@ -350,7 +419,7 @@ export default function CFInvestmentsList() {
   )
 }
 
-// ── Sub-components ──────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────
 
 function StatCell({ label, value, color }: { label: string; value: string; color: string }) {
   return (
@@ -362,9 +431,7 @@ function StatCell({ label, value, color }: { label: string; value: string; color
 }
 
 function InvestmentCard({ inv, onEdit, onDelete }: {
-  inv: CFInvestment
-  onEdit: () => void
-  onDelete: () => void
+  inv: CFInvestment; onEdit: () => void; onDelete: () => void
 }) {
   const cfg = STATUS_CONFIG[inv.status]
   const StatusIcon = cfg.icon
@@ -378,8 +445,8 @@ function InvestmentCard({ inv, onEdit, onDelete }: {
     : null
 
   return (
-    <div className="group relative overflow-hidden p-5 transition-all hover:scale-[1.01]" style={{ ...cfTile, cursor: 'default' }}>
-      {/* Top row: entity + status badge + actions */}
+    <div className="group relative overflow-hidden p-5 transition-all hover:scale-[1.01]" style={cfTile}>
+      {/* Top row */}
       <div className="flex items-start gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -390,13 +457,11 @@ function InvestmentCard({ inv, onEdit, onDelete }: {
               {cfg.label}
             </span>
           </div>
-          {/* Sector chip */}
           <span className="inline-block mt-1 px-2 py-0.5 rounded-[6px] text-[11px] font-medium text-white/50"
             style={{ background: SECTOR_COLORS[inv.sector] ?? 'rgba(255,255,255,0.08)' }}>
             {inv.sector}
           </span>
         </div>
-        {/* Actions */}
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={onEdit} title="Edit"
             className="w-7 h-7 flex items-center justify-center rounded-full text-white/25 hover:text-white/70 hover:bg-white/10 transition-all">
@@ -409,34 +474,36 @@ function InvestmentCard({ inv, onEdit, onDelete }: {
         </div>
       </div>
 
-      {/* Brief */}
       {inv.brief && (
         <p className="text-[13px] text-white/45 mb-4 leading-relaxed">{inv.brief}</p>
       )}
 
-      {/* Amounts row */}
+      {/* Amounts */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="rounded-[12px] px-3.5 py-2.5" style={{ background: 'rgba(255,255,255,0.05)' }}>
           <div className="text-[11px] text-white/35 uppercase tracking-wider font-semibold mb-1">Invested</div>
           <div className="text-[16px] font-bold text-white">LKR {formatCurrency(Number(inv.amount_invested))}</div>
         </div>
 
-        {inv.status !== 'active' && inv.actual_return != null ? (
-          <div className="rounded-[12px] px-3.5 py-2.5" style={{ background: roi != null && roi >= 0 ? 'rgba(52,199,89,0.1)' : 'rgba(255,69,58,0.1)' }}>
-            <div className="text-[11px] uppercase tracking-wider font-semibold mb-1" style={{ color: roi != null && roi >= 0 ? CF_GREEN : CF_RED, opacity: 0.7 }}>Actual Return</div>
+        {inv.actual_return != null ? (
+          <div className="rounded-[12px] px-3.5 py-2.5"
+            style={{ background: roi != null && roi >= 0 ? 'rgba(52,199,89,0.1)' : 'rgba(255,69,58,0.1)' }}>
+            <div className="text-[11px] uppercase tracking-wider font-semibold mb-1"
+              style={{ color: roi != null && roi >= 0 ? CF_GREEN : CF_RED, opacity: 0.7 }}>Actual Return</div>
             <div className="text-[16px] font-bold" style={{ color: roi != null && roi >= 0 ? CF_GREEN : CF_RED }}>
               LKR {formatCurrency(Number(inv.actual_return))}
             </div>
           </div>
         ) : inv.expected_return != null ? (
-          <div className="rounded-[12px] px-3.5 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)' }}>
+          <div className="rounded-[12px] px-3.5 py-2.5"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)' }}>
             <div className="text-[11px] text-white/25 uppercase tracking-wider font-semibold mb-1">Expected</div>
             <div className="text-[16px] font-semibold text-white/35">LKR {formatCurrency(Number(inv.expected_return))}</div>
           </div>
         ) : null}
       </div>
 
-      {/* ROI + meta row */}
+      {/* ROI + meta */}
       <div className="flex items-center gap-3 flex-wrap">
         {roi != null && (
           <div className="flex items-center gap-1 text-[13px] font-bold" style={{ color: roi >= 0 ? CF_GREEN : CF_RED }}>
@@ -450,24 +517,71 @@ function InvestmentCard({ inv, onEdit, onDelete }: {
             +{expectedRoi.toFixed(1)}% expected
           </div>
         )}
-
         <div className="flex items-center gap-2 ml-auto text-[12px] text-white/25">
-          {inv.target_date && (
-            <span className="flex items-center gap-1">
-              <Calendar size={11} />
-              {formatDate(inv.target_date)}
-            </span>
-          )}
-          {!inv.target_date && (
-            <span>{formatDate(inv.invested_at)}</span>
-          )}
+          {inv.target_date
+            ? <span className="flex items-center gap-1"><Calendar size={11} />{formatDate(inv.target_date)}</span>
+            : <span>{formatDate(inv.invested_at)}</span>}
         </div>
       </div>
 
-      {/* Notes */}
       {inv.notes && (
         <div className="mt-3 pt-3 border-t border-white/[0.06] text-[12px] text-white/30 italic">{inv.notes}</div>
       )}
+    </div>
+  )
+}
+
+function ClosedRow({ inv, i, onEdit, onDelete }: {
+  inv: CFInvestment; i: number; onEdit: () => void; onDelete: () => void
+}) {
+  const roi = inv.actual_return != null && inv.amount_invested > 0
+    ? ((Number(inv.actual_return) - Number(inv.amount_invested)) / Number(inv.amount_invested)) * 100
+    : null
+
+  return (
+    <div className={`group flex items-center gap-3 px-4 md:px-5 py-3 hover:bg-white/[0.03] transition-colors ${i !== 0 ? 'border-t border-white/[0.06]' : ''}`}>
+      {/* Lock icon */}
+      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <Lock size={12} className="text-white/30" />
+      </div>
+
+      {/* Entity + brief */}
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-semibold text-white/50 truncate">{inv.entity}</div>
+        <div className="text-[12px] text-white/25 truncate">
+          {inv.sector}{inv.brief ? ` · ${inv.brief}` : ''} · {formatDate(inv.invested_at)}
+        </div>
+      </div>
+
+      {/* Amounts */}
+      <div className="text-right shrink-0 hidden sm:block">
+        <div className="text-[13px] text-white/30 line-through">LKR {formatCurrency(Number(inv.amount_invested))}</div>
+        {inv.actual_return != null && (
+          <div className="text-[13px] font-semibold" style={{ color: roi != null && roi >= 0 ? CF_GREEN : CF_RED }}>
+            LKR {formatCurrency(Number(inv.actual_return))}
+          </div>
+        )}
+      </div>
+
+      {/* ROI badge */}
+      {roi != null && (
+        <div className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold"
+          style={{ background: roi >= 0 ? 'rgba(52,199,89,0.15)' : 'rgba(255,69,58,0.15)', color: roi >= 0 ? CF_GREEN : CF_RED }}>
+          {roi >= 0 ? '+' : ''}{roi.toFixed(1)}%
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={onEdit} title="Edit"
+          className="w-7 h-7 flex items-center justify-center rounded-full text-white/20 hover:text-white/60 hover:bg-white/10 transition-all">
+          <Pencil size={13} />
+        </button>
+        <button onClick={onDelete} title="Delete"
+          className="w-7 h-7 flex items-center justify-center rounded-full text-white/15 hover:text-[#FF453A] hover:bg-white/10 transition-all">
+          <Trash2 size={14} />
+        </button>
+      </div>
     </div>
   )
 }

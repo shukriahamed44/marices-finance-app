@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS cf_investments (
   expected_return numeric(15,2),
   target_date     date,
   status          text        NOT NULL DEFAULT 'active'
-                  CHECK (status IN ('active','gained','lost','partial')),
+                  CHECK (status IN ('active','gained','lost','partial','closed')),
   actual_return   numeric(15,2),
   notes           text        NOT NULL DEFAULT '',
   invested_at     date        NOT NULL DEFAULT CURRENT_DATE,

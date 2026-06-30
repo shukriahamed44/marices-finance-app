@@ -59,7 +59,7 @@ export interface CFTransactionWithClient extends CFTransaction {
 }
 
 // ─── Investments ─────────────────────────────────────────────
-export type CFInvestmentStatus = 'active' | 'gained' | 'lost' | 'partial'
+export type CFInvestmentStatus = 'active' | 'gained' | 'lost' | 'partial' | 'closed'
 export type CFInvestmentSector =
   | 'Crypto' | 'Equity' | 'Commodity' | 'Forex'
   | 'Index' | 'Private Deal' | 'Real Estate' | 'Other'
