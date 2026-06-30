@@ -57,3 +57,25 @@ export interface CFTransactionWithClient extends CFTransaction {
   client_name: string | null
   job_title: string | null
 }
+
+// ─── Investments ─────────────────────────────────────────────
+export type CFInvestmentStatus = 'active' | 'gained' | 'lost' | 'partial'
+export type CFInvestmentSector =
+  | 'Crypto' | 'Equity' | 'Commodity' | 'Forex'
+  | 'Index' | 'Private Deal' | 'Real Estate' | 'Other'
+
+export interface CFInvestment {
+  id: string
+  user_id: string
+  entity: string
+  brief: string
+  sector: CFInvestmentSector
+  amount_invested: number
+  expected_return: number | null
+  target_date: string | null
+  status: CFInvestmentStatus
+  actual_return: number | null
+  notes: string
+  invested_at: string
+  created_at: string
+}

@@ -14,6 +14,7 @@ import CFDashboard from './pages/cf/CFDashboard'
 import CFClientsList from './pages/cf/CFClientsList'
 import CFClientDetail from './pages/cf/CFClientDetail'
 import CFDebtsList from './pages/cf/CFDebtsList'
+import CFInvestmentsList from './pages/cf/CFInvestmentsList'
 import type { ReactNode } from 'react'
 
 function Spinner() {
@@ -58,8 +59,9 @@ function AppRoutes() {
         <Route path="dashboard"  element={<CFDashboard />} />
         <Route path="clients"    element={<CFClientsList />} />
         <Route path="clients/:id" element={<CFClientDetail />} />
-        <Route path="debts"      element={<CFDebtsList />} />
-        <Route path="*"          element={<Navigate to="/cf/dashboard" replace />} />
+        <Route path="debts"       element={<CFDebtsList />} />
+        <Route path="investments" element={<CFInvestmentsList />} />
+        <Route path="*"           element={<Navigate to="/cf/dashboard" replace />} />
       </Route>
     </Routes>
   )

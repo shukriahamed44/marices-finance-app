@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import type {
   CFClient, CFJob, CFTransaction, CFDirection, CFDebt,
   CFClientStats, CFJobStats, CFTransactionWithClient,
+  CFInvestment,
 } from '../lib/cf-types'
 
 interface CFContextValue {
@@ -11,6 +12,7 @@ interface CFContextValue {
   jobs: CFJob[]
   transactions: CFTransaction[]
   debts: CFDebt[]
+  investments: CFInvestment[]
   loading: boolean
 
   totalBalance: number
@@ -36,6 +38,10 @@ interface CFContextValue {
   }) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
 
+  addInvestment: (inv: Omit<CFInvestment, 'id' | 'user_id' | 'created_at'>) => Promise<string | null>
+  updateInvestment: (id: string, patch: Partial<Omit<CFInvestment, 'id' | 'user_id' | 'created_at'>>) => Promise<void>
+  deleteInvestment: (id: string) => Promise<void>
+
   getClientById: (id: string) => CFClient | undefined
   getJobsByClient: (clientId: string) => CFJob[]
   getClientStats: (clientId: string) => CFClientStats
@@ -50,6 +56,7 @@ export function CFProvider({ children }: { children: ReactNode }) {
   const [jobs,         setJobs]         = useState<CFJob[]>([])
   const [transactions, setTransactions] = useState<CFTransaction[]>([])
   const [debts,        setDebts]        = useState<CFDebt[]>([])
+  const [investments,  setInvestments]  = useState<CFInvestment[]>([])
   const [loading,      setLoading]      = useState(true)
   const [loadError,    setLoadError]    = useState<string | null>(null)
 
@@ -59,14 +66,15 @@ export function CFProvider({ children }: { children: ReactNode }) {
     let active = true
     async function load() {
       setLoading(true)
-      const [cRes, jRes, tRes, dRes] = await Promise.all([
+      const [cRes, jRes, tRes, dRes, iRes] = await Promise.all([
         supabase.from('cf_clients').select('*').order('created_at', { ascending: true }),
         supabase.from('cf_jobs').select('*').order('created_at', { ascending: false }),
         supabase.from('cf_transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('cf_debts').select('*').order('created_at', { ascending: false }),
+        supabase.from('cf_investments').select('*').order('invested_at', { ascending: false }),
       ])
       if (!active) return
-      const err = cRes.error || jRes.error || tRes.error || dRes.error
+      const err = cRes.error || jRes.error || tRes.error || dRes.error || iRes.error
       if (err) {
         console.error('[CF] load failed:', err)
         setLoadError(err.message)
@@ -77,6 +85,7 @@ export function CFProvider({ children }: { children: ReactNode }) {
       if (jRes.data) setJobs(jRes.data as CFJob[])
       if (tRes.data) setTransactions(tRes.data as CFTransaction[])
       if (dRes.data) setDebts(dRes.data as CFDebt[])
+      if (iRes.data) setInvestments(iRes.data as CFInvestment[])
       setLoading(false)
     }
     load()
@@ -191,6 +200,26 @@ export function CFProvider({ children }: { children: ReactNode }) {
     if (!error) setTransactions(prev => prev.filter(t => t.id !== id))
   }, [])
 
+  // ── Investments ─────────────────────────────────────────────
+  const addInvestment = useCallback(async (inv: Omit<CFInvestment, 'id' | 'user_id' | 'created_at'>): Promise<string | null> => {
+    if (!user) return 'You must be signed in.'
+    const { data, error } = await supabase
+      .from('cf_investments').insert({ ...inv, user_id: user.id }).select().single()
+    if (error) { console.error('[CF] addInvestment failed:', error); return error.message }
+    if (data) setInvestments(prev => [data as CFInvestment, ...prev])
+    return null
+  }, [user])
+
+  const updateInvestment = useCallback(async (id: string, patch: Partial<Omit<CFInvestment, 'id' | 'user_id' | 'created_at'>>) => {
+    const { data, error } = await supabase.from('cf_investments').update(patch).eq('id', id).select().single()
+    if (!error && data) setInvestments(prev => prev.map(i => i.id === id ? data as CFInvestment : i))
+  }, [])
+
+  const deleteInvestment = useCallback(async (id: string) => {
+    const { error } = await supabase.from('cf_investments').delete().eq('id', id)
+    if (!error) setInvestments(prev => prev.filter(i => i.id !== id))
+  }, [])
+
   // ── Lookups ─────────────────────────────────────────────────
   const getClientById  = useCallback((id: string) => clients.find(c => c.id === id), [clients])
   const getJobsByClient = useCallback((clientId: string) => jobs.filter(j => j.client_id === clientId), [jobs])
@@ -215,9 +244,10 @@ export function CFProvider({ children }: { children: ReactNode }) {
 
   return (
     <CFContext.Provider value={{
-      clients, jobs, transactions, debts, loading, loadError,
+      clients, jobs, transactions, debts, investments, loading, loadError,
       totalBalance, totalIn, totalOut, totalOwed, recentTransactions,
       addClient, deleteClient, addJob, deleteJob, addDebt, updateDebt, deleteDebt, addTransaction, deleteTransaction,
+      addInvestment, updateInvestment, deleteInvestment,
       getClientById, getJobsByClient, getClientStats, getJobStats,
     }}>
       {children}
