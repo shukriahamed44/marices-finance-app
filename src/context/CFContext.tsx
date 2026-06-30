@@ -93,8 +93,16 @@ export function CFProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   // ── Derived ─────────────────────────────────────────────────
-  const totalIn  = useMemo(() => transactions.filter(t => t.direction === 'in').reduce((s, t) => s + Number(t.amount), 0), [transactions])
-  const totalOut = useMemo(() => transactions.filter(t => t.direction === 'out').reduce((s, t) => s + Number(t.amount), 0), [transactions])
+  const totalIn  = useMemo(() =>
+    transactions.filter(t => t.direction === 'in').reduce((s, t) => s + Number(t.amount), 0) +
+    investments.filter(i => i.status === 'gained' || i.status === 'partial').reduce((s, i) => s + Number(i.actual_return ?? 0), 0),
+    [transactions, investments])
+
+  const totalOut = useMemo(() =>
+    transactions.filter(t => t.direction === 'out').reduce((s, t) => s + Number(t.amount), 0) +
+    investments.reduce((s, i) => s + Number(i.amount_invested), 0),
+    [transactions, investments])
+
   const totalBalance = totalIn - totalOut
 
   const totalOwed = useMemo(() =>
