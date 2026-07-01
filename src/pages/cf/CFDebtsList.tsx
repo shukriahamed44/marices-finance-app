@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus, HandCoins, X, Trash2, Check, RotateCcw, Pencil } from 'lucide-react'
 import { useCF } from '../../context/CFContext'
 import { formatCurrency, formatDate } from '../../lib/utils'
-import { cfTile, cfHero, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_AMBER } from '../../components/cf/cfStyles'
+import { cfTile, cfHero, cfModal, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_AMBER } from '../../components/cf/cfStyles'
 import type { CFDebt } from '../../lib/cf-types'
 
 export default function CFDebtsList() {
@@ -68,8 +68,6 @@ export default function CFDebtsList() {
 
       {/* Total owed hero */}
       <div className="relative overflow-hidden p-6 mb-4" style={cfHero}>
-        <div className="absolute top-[-20%] right-[-5%] w-[50%] h-[80%] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(255,159,10,0.22) 0%, transparent 70%)', filter: 'blur(50px)' }} />
         <div className="relative">
           <div className="flex items-center gap-2">
             <HandCoins size={15} className="text-white/50" />
@@ -129,7 +127,7 @@ export default function CFDebtsList() {
         <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center md:px-4" onClick={close}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-[3px]" />
           <div onClick={e => e.stopPropagation()} className="relative w-full md:max-w-[400px] rounded-t-[28px] md:rounded-[28px] p-6"
-            style={{ background: 'linear-gradient(145deg, rgba(28,28,34,0.95) 0%, rgba(18,18,22,0.95) 100%)', backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 -8px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+            style={cfModal}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[18px] font-bold text-white">{editing === 'new' ? 'New Debt' : 'Edit Debt'}</h2>
               <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10">

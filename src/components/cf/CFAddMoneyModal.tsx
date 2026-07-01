@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { useCF } from '../../context/CFContext'
 import type { CFDirection } from '../../lib/cf-types'
-import { cfInput, cfInputRing, cfLabel, cfTile, CF_GREEN, CF_RED, CF_AMBER } from './cfStyles'
+import { cfInput, cfInputRing, cfLabel, cfModal, cfTile, CF_GREEN, CF_RED, CF_AMBER } from './cfStyles'
 
 interface Props {
   direction: CFDirection
@@ -57,13 +57,7 @@ export default function CFAddMoneyModal({ direction, presetClientId, onClose }: 
       <div
         onClick={e => e.stopPropagation()}
         className="relative w-full md:max-w-[420px] max-h-[92vh] overflow-y-auto rounded-t-[28px] md:rounded-[28px] p-6"
-        style={{
-          background: 'linear-gradient(145deg, rgba(28,28,34,0.95) 0%, rgba(18,18,22,0.95) 100%)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          boxShadow: '0 -8px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)',
-        }}
+        style={cfModal}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

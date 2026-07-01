@@ -28,8 +28,6 @@ export default function CFDashboard() {
 
       {/* Balance hero */}
       <div className="relative overflow-hidden p-6 md:p-8 mb-4" style={cfHero}>
-        <div className="absolute top-[-20%] right-[-5%] w-[50%] h-[80%] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(0,200,160,0.25) 0%, transparent 70%)', filter: 'blur(50px)' }} />
         <div className="relative">
           <div className="flex items-center gap-2">
             <Wallet size={15} className="text-white/50" />

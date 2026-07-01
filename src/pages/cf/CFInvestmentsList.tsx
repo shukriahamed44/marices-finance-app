@@ -3,7 +3,8 @@ import { Plus, TrendingUp, X, Trash2, Pencil, ChevronDown, ArrowUpRight, ArrowDo
 import { useCF } from '../../context/CFContext'
 import { formatCurrency, formatDate } from '../../lib/utils'
 import {
-  cfTile, cfHero, cfInput, cfInputRing, cfLabel, cfPrimaryBtn,
+  cfTile, cfHero, cfModal, cfInput, cfInputRing, cfLabel, cfPrimaryBtn,
+  CF_ACTIVE_BG, CF_ACTIVE_BORDER, CF_ACTIVE_SHADOW,
   CF_GREEN, CF_RED, CF_BLUE, CF_AMBER,
 } from '../../components/cf/cfStyles'
 import type { CFInvestment, CFInvestmentSector, CFInvestmentStatus } from '../../lib/cf-types'
@@ -56,24 +57,25 @@ const BLANK = (): Omit<CFInvestment, 'id' | 'user_id' | 'created_at'> => ({
 export default function CFInvestmentsList() {
   const { investments, addInvestment, updateInvestment, deleteInvestment, loading, loadError } = useCF()
 
-  const [filter, setFilter]     = useState<FilterTab>('all')
-  const [editing, setEditing]   = useState<CFInvestment | 'new' | null>(null)
-  const [form, setForm]         = useState(BLANK())
-  // tracks the open status independently; 'closed' checkbox overlays on top
-  const [openStatus, setOpenStatus] = useState<OpenStatus>('active')
-  const [isClosed, setIsClosed] = useState(false)
-  const [error, setError]       = useState('')
-  const [saving, setSaving]     = useState(false)
+  const [filter, setFilter]   = useState<FilterTab>('all')
+  const [editing, setEditing] = useState<CFInvestment | 'new' | null>(null)
+  const [form, setForm]       = useState(BLANK())
+  // last non-closed status, so toggling Close off restores it
+  const [prevOpenStatus, setPrevOpenStatus] = useState<OpenStatus>('active')
+  const [error, setError]     = useState('')
+  const [saving, setSaving]   = useState(false)
+
+  const isClosed = form.status === 'closed'
+  const openStatus: OpenStatus = isClosed ? prevOpenStatus : (form.status as OpenStatus)
 
   function openNew() {
-    setForm(BLANK()); setOpenStatus('active'); setIsClosed(false); setError(''); setEditing('new')
+    setForm(BLANK()); setPrevOpenStatus('active'); setError(''); setEditing('new')
   }
   function openEdit(inv: CFInvestment) {
-    const os: OpenStatus = inv.status === 'closed'
-      ? (inv.actual_return != null ? (inv.actual_return >= inv.amount_invested ? 'gained' : 'lost') : 'gained')
+    const prev: OpenStatus = inv.status === 'closed'
+      ? (inv.actual_return != null && Number(inv.actual_return) >= Number(inv.amount_invested) ? 'gained' : 'lost')
       : inv.status as OpenStatus
-    setOpenStatus(os)
-    setIsClosed(inv.status === 'closed')
+    setPrevOpenStatus(prev)
     setForm({
       entity: inv.entity, brief: inv.brief, sector: inv.sector,
       amount_invested: inv.amount_invested, expected_return: inv.expected_return,
@@ -89,12 +91,25 @@ export default function CFInvestmentsList() {
     setForm(prev => ({ ...prev, [k]: v }))
   }
 
+  function setStatus(s: OpenStatus) {
+    setPrevOpenStatus(s)
+    setForm(prev => ({ ...prev, status: s }))
+  }
+
+  function toggleClosed() {
+    if (isClosed) {
+      setForm(prev => ({ ...prev, status: prevOpenStatus }))
+    } else {
+      setPrevOpenStatus(openStatus)
+      setForm(prev => ({ ...prev, status: 'closed' }))
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!form.entity.trim()) return setError('Enter an entity name.')
     const amt = Number(form.amount_invested)
     if (!amt || amt <= 0) return setError('Enter a valid invested amount.')
-    const finalStatus: CFInvestmentStatus = isClosed ? 'closed' : openStatus
     setError(''); setSaving(true)
     const payload = {
       ...form,
@@ -104,7 +119,6 @@ export default function CFInvestmentsList() {
       amount_invested: amt,
       expected_return: form.expected_return ? Number(form.expected_return) : null,
       actual_return: form.actual_return != null ? Number(form.actual_return) : null,
-      status: finalStatus,
     }
     let err: string | null = null
     if (editing === 'new') {
@@ -171,8 +185,6 @@ export default function CFInvestmentsList() {
 
       {/* Hero stats */}
       <div className="relative overflow-hidden p-6 mb-4" style={cfHero}>
-        <div className="absolute top-[-20%] right-[-5%] w-[45%] h-[80%] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(0,200,160,0.28) 0%, transparent 70%)', filter: 'blur(50px)' }} />
         <div className="relative grid grid-cols-2 md:grid-cols-4 gap-6">
           <StatCell label="Total Deployed"  value={`LKR ${formatCurrency(totalDeployed)}`} color="rgba(255,255,255,0.85)" />
           <StatCell label="Returned"        value={`LKR ${formatCurrency(totalReturned)}`} color={totalReturned > 0 ? CF_GREEN : 'rgba(255,255,255,0.85)'} />
@@ -191,8 +203,8 @@ export default function CFInvestmentsList() {
           <button key={f.id} onClick={() => setFilter(f.id)}
             className="px-3.5 py-1.5 rounded-[10px] text-[13px] font-medium transition-all"
             style={filter === f.id
-              ? { background: 'linear-gradient(135deg, rgba(0,200,160,0.85), rgba(0,113,227,0.85))', color: '#fff' }
-              : { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              ? { background: CF_ACTIVE_BG, color: '#fff', border: `1px solid ${CF_ACTIVE_BORDER}`, boxShadow: CF_ACTIVE_SHADOW }
+              : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
             {f.label}
           </button>
         ))}
@@ -255,7 +267,7 @@ export default function CFInvestmentsList() {
           <div
             onClick={e => e.stopPropagation()}
             className="relative w-full md:max-w-[480px] rounded-t-[28px] md:rounded-[28px] p-6 max-h-[92vh] overflow-y-auto"
-            style={{ background: 'linear-gradient(145deg, rgba(28,28,34,0.97) 0%, rgba(18,18,22,0.97) 100%)', backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 -8px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)' }}
+            style={{ ...cfModal, borderRadius: undefined }}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[18px] font-bold text-white">{editing === 'new' ? 'New Investment' : 'Edit Investment'}</h2>
@@ -342,7 +354,7 @@ export default function CFInvestmentsList() {
                     const isActive = openStatus === s
                     return (
                       <button key={s} type="button"
-                        onClick={() => { setOpenStatus(s); if (s === 'active') setIsClosed(false) }}
+                        onClick={() => setStatus(s)}
                         className="flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-[12px] text-[12px] font-semibold transition-all"
                         style={isActive
                           ? { background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}55` }
@@ -369,28 +381,34 @@ export default function CFInvestmentsList() {
                 </div>
               )}
 
-              {/* Close Position toggle — only shown when status is not active */}
+              {/* Close Position toggle — only when not active */}
               {openStatus !== 'active' && (
                 <button
                   type="button"
-                  onClick={() => setIsClosed(prev => !prev)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-[14px] transition-all"
+                  onClick={toggleClosed}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-[14px]"
                   style={isClosed
-                    ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }
-                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    ? { background: 'rgba(52,199,89,0.14)', border: '1px solid rgba(52,199,89,0.4)' }
+                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Lock size={14} className={isClosed ? 'text-white/70' : 'text-white/25'} />
+                    <Lock size={14} style={{ color: isClosed ? CF_GREEN : 'rgba(255,255,255,0.25)' }} />
                     <div className="text-left">
-                      <div className={`text-[14px] font-semibold ${isClosed ? 'text-white' : 'text-white/40'}`}>Close Position</div>
-                      <div className="text-[11px] text-white/25">Mark this investment as fully settled</div>
+                      <div className="text-[14px] font-semibold" style={{ color: isClosed ? CF_GREEN : 'rgba(255,255,255,0.45)' }}>
+                        {isClosed ? 'Position Closed' : 'Close Position'}
+                      </div>
+                      <div className="text-[11px] text-white/25">
+                        {isClosed ? 'Tap to reopen' : 'Mark as fully settled'}
+                      </div>
                     </div>
                   </div>
                   {/* Toggle pill */}
-                  <div className="w-10 h-6 rounded-full relative transition-all shrink-0"
-                    style={{ background: isClosed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.1)' }}>
-                    <div className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-all"
-                      style={{ left: isClosed ? '18px' : '3px', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }} />
+                  <div className="relative w-11 h-6 rounded-full shrink-0"
+                    style={{ background: isClosed ? CF_GREEN : 'rgba(255,255,255,0.12)' }}>
+                    <div
+                      className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white"
+                      style={{ left: isClosed ? '21px' : '3px', transition: 'left 0.18s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.35)' }}
+                    />
                   </div>
                 </button>
               )}

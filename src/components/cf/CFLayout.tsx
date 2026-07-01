@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation, Navigate } from 'react-route
 import { LayoutDashboard, Users, HandCoins, TrendingUp, Wallet, LogOut, X, Menu } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { CFProvider } from '../../context/CFContext'
-import { cfPageBg, cfTile } from './cfStyles'
+import { cfPageBg, cfTile, CF_ACTIVE_BG, CF_ACTIVE_BORDER, CF_ACTIVE_SHADOW } from './cfStyles'
 
 const NAV = [
   { to: '/cf/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
@@ -25,7 +25,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-[14px] font-medium transition-all"
             style={active
-              ? { background: 'linear-gradient(135deg, rgba(0,200,160,0.85), rgba(0,113,227,0.85))', color: '#fff', boxShadow: '0 4px 14px rgba(0,170,140,0.3), inset 0 1px 0 rgba(255,255,255,0.2)' }
+              ? { background: CF_ACTIVE_BG, color: '#fff', border: `1px solid ${CF_ACTIVE_BORDER}`, boxShadow: CF_ACTIVE_SHADOW }
               : { color: 'rgba(255,255,255,0.5)' }}
           >
             <Icon size={17} strokeWidth={active ? 2.5 : 2} />
@@ -49,13 +49,13 @@ function SidebarInner({ onClose }: { onClose?: () => void }) {
   return (
     <aside
       className="flex flex-col w-[230px] h-full shrink-0"
-      style={{ background: 'rgba(12,12,16,0.72)', backdropFilter: 'blur(32px) saturate(160%)', WebkitBackdropFilter: 'blur(32px) saturate(160%)', borderRight: '1px solid rgba(255,255,255,0.08)' }}
+      style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)', borderRight: '1px solid rgba(255,255,255,0.07)' }}
     >
       {/* Logo */}
       <div className="px-5 pt-7 pb-6">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-[9px] flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #00C8A0, #0071E3)' }}>
+            style={{ background: CF_ACTIVE_BG, border: `1px solid ${CF_ACTIVE_BORDER}`, boxShadow: CF_ACTIVE_SHADOW }}>
             <Wallet size={15} className="text-white" strokeWidth={2.2} />
           </div>
           <div className="flex-1">
@@ -76,7 +76,7 @@ function SidebarInner({ onClose }: { onClose?: () => void }) {
       <div className="px-3 pb-5">
         <div className="rounded-[14px] p-3 flex items-center gap-2.5" style={cfTile}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0"
-            style={{ background: 'linear-gradient(135deg, #00C8A0, #0071E3)' }}>
+            style={{ background: CF_ACTIVE_BG, border: `1px solid ${CF_ACTIVE_BORDER}` }}>
             {user?.email?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
@@ -110,7 +110,7 @@ export default function CFLayout() {
       <div className="fixed inset-0 flex overflow-hidden" style={cfPageBg}>
         {/* Mobile top bar */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-12 flex items-center px-4"
-          style={{ background: 'rgba(12,12,16,0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <button onClick={() => setDrawerOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-[10px] text-white/70 hover:bg-white/10">
             <Menu size={20} />
           </button>

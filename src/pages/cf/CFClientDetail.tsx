@@ -5,7 +5,7 @@ import { useCF } from '../../context/CFContext'
 import { formatCurrency, formatDate } from '../../lib/utils'
 import { getInitials, getAvatarColor } from '../../lib/utils'
 import CFAddMoneyModal from '../../components/cf/CFAddMoneyModal'
-import { cfTile, cfHero, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_GREEN, CF_AMBER } from '../../components/cf/cfStyles'
+import { cfTile, cfHero, cfModal, cfInput, cfInputRing, cfLabel, cfPrimaryBtn, CF_GREEN, CF_AMBER } from '../../components/cf/cfStyles'
 
 export default function CFClientDetail() {
   const { id } = useParams<{ id: string }>()
@@ -239,13 +239,7 @@ export default function CFClientDetail() {
           <div
             onClick={e => e.stopPropagation()}
             className="relative w-full md:max-w-[400px] rounded-t-[28px] md:rounded-[28px] p-6"
-            style={{
-              background: 'linear-gradient(145deg, rgba(28,28,34,0.95) 0%, rgba(18,18,22,0.95) 100%)',
-              backdropFilter: 'blur(40px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              boxShadow: '0 -8px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15)',
-            }}
+            style={cfModal}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[18px] font-bold text-white">New Job</h2>

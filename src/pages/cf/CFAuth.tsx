@@ -54,12 +54,8 @@ export default function CFAuth() {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center px-4 overflow-y-auto py-10"
-      style={{ background: 'radial-gradient(ellipse at 20% 40%, rgba(0,150,136,0.4) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(0,113,227,0.32) 0%, transparent 50%), radial-gradient(ellipse at 60% 85%, rgba(94,92,230,0.22) 0%, transparent 50%), #000' }}
+      style={{ background: '#000' }}
     >
-      {/* Ambient orbs */}
-      <div className="absolute top-[20%] left-[10%] w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(0,180,150,0.2) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-      <div className="absolute bottom-[15%] right-[10%] w-60 h-60 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(0,120,255,0.2) 0%, transparent 70%)', filter: 'blur(45px)' }} />
-
       {/* Back to landing */}
       <button
         onClick={() => navigate('/')}
@@ -72,17 +68,22 @@ export default function CFAuth() {
       <div
         className="w-full max-w-[380px] rounded-[28px] overflow-hidden p-8 my-auto"
         style={{
-          background: 'linear-gradient(145deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.15)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(0,0,0,0.88) 60%)',
+          backdropFilter: 'blur(56px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(56px) saturate(200%)',
+          border: '1px solid rgba(255,255,255,0.11)',
+          boxShadow: [
+            'inset 0 2px 0 rgba(255,255,255,0.18)',
+            'inset 1px 0 0 rgba(180,100,255,0.08)',
+            'inset -1px 0 0 rgba(80,210,255,0.08)',
+            '0 32px 80px rgba(0,0,0,0.95)',
+          ].join(', '),
         }}
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mb-4 shadow-xl"
-            style={{ background: 'linear-gradient(145deg, rgba(0,200,160,0.5), rgba(0,113,227,0.35))', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)' }}>
+            style={{ background: 'linear-gradient(180deg, rgba(255,195,70,0.18) 0%, rgba(220,140,30,0.08) 48%, rgba(14,8,0,0.72) 49%, rgba(0,0,0,0.58) 100%)', border: '1px solid rgba(255,245,210,0.22)', boxShadow: 'inset 0 1.5px 0 rgba(255,252,240,0.55), 0 8px 24px rgba(0,0,0,0.5)' }}>
             <Wallet size={24} className="text-white" strokeWidth={1.8} />
           </div>
           <h1 className="text-[22px] font-bold text-white tracking-tight">
@@ -165,9 +166,9 @@ export default function CFAuth() {
             disabled={loading}
             className="w-full mt-2 py-3.5 rounded-[14px] text-[16px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: 'linear-gradient(135deg, rgba(0,200,160,0.9), rgba(0,113,227,0.9))',
-              boxShadow: '0 8px 24px rgba(0,170,140,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'linear-gradient(180deg, rgba(255,195,70,0.18) 0%, rgba(220,140,30,0.08) 46%, rgba(14,8,0,0.74) 47%, rgba(0,0,0,0.60) 100%)',
+              border: '1px solid rgba(255,245,210,0.22)',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,252,240,0.58), inset 0 -1px 0 rgba(0,0,0,0.55), 0 0 16px rgba(200,140,30,0.14), 0 4px 16px rgba(0,0,0,0.55)',
             }}
           >
             {loading ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
