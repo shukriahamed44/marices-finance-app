@@ -7,6 +7,7 @@ interface AppContextValue {
   investors: Investor[]
   transactions: Transaction[]
   balances: InvestorBalance[]
+  trashedBalances: InvestorBalance[]
   recentTransactions: TransactionWithInvestor[]
   loading: boolean
   addTransaction: (tx: Omit<Transaction, 'id' | 'created_at'>) => Promise<void>
@@ -14,6 +15,9 @@ interface AppContextValue {
   deleteTransaction: (id: string) => Promise<void>
   addInvestor: (inv: Omit<Investor, 'id' | 'created_at'>) => Promise<void>
   updateInvestor: (id: string, patch: Partial<Investor>) => Promise<void>
+  deleteInvestor: (id: string) => Promise<void>
+  restoreInvestor: (id: string) => Promise<void>
+  permanentlyDeleteInvestor: (id: string) => Promise<void>
   getInvestorById: (id: string) => Investor | undefined
   getBalanceById: (id: string) => InvestorBalance | undefined
   getTransactionsByInvestor: (id: string) => Transaction[]
@@ -65,7 +69,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ── Derived state ────────────────────────────────────────────
-  const balances = computeBalances(investors, transactions)
+  const activeInvestors  = investors.filter(i => !i.deleted_at)
+  const trashedInvestors = investors.filter(i => i.deleted_at)
+  const balances        = computeBalances(activeInvestors, transactions)
+  const trashedBalances = computeBalances(trashedInvestors, transactions)
 
   const recentTransactions: TransactionWithInvestor[] = [...transactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -121,6 +128,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!error && data) setInvestors(prev => prev.map(i => i.id === id ? data as Investor : i))
   }, [])
 
+  // Soft delete — moves the investor to the trash, keeping their transaction history.
+  const deleteInvestor = useCallback(async (id: string) => {
+    const deleted_at = new Date().toISOString()
+    if (USE_MOCK) {
+      setInvestors(prev => prev.map(i => i.id === id ? { ...i, deleted_at } : i))
+      return
+    }
+    const { data, error } = await supabase!.from('investors').update({ deleted_at }).eq('id', id).select().single()
+    if (!error && data) setInvestors(prev => prev.map(i => i.id === id ? data as Investor : i))
+  }, [])
+
+  const restoreInvestor = useCallback(async (id: string) => {
+    if (USE_MOCK) {
+      setInvestors(prev => prev.map(i => i.id === id ? { ...i, deleted_at: null } : i))
+      return
+    }
+    const { data, error } = await supabase!.from('investors').update({ deleted_at: null }).eq('id', id).select().single()
+    if (!error && data) setInvestors(prev => prev.map(i => i.id === id ? data as Investor : i))
+  }, [])
+
+  // Hard delete — permanently removes the investor and their transactions. Cannot be undone.
+  const permanentlyDeleteInvestor = useCallback(async (id: string) => {
+    if (USE_MOCK) {
+      setTransactions(prev => prev.filter(t => t.investor_id !== id))
+      setInvestors(prev => prev.filter(i => i.id !== id))
+      return
+    }
+    const { error: txError } = await supabase!.from('transactions').delete().eq('investor_id', id)
+    if (txError) return
+    const { error } = await supabase!.from('investors').delete().eq('id', id)
+    if (!error) {
+      setTransactions(prev => prev.filter(t => t.investor_id !== id))
+      setInvestors(prev => prev.filter(i => i.id !== id))
+    }
+  }, [])
+
   // ── Lookups ──────────────────────────────────────────────────
   const getInvestorById           = useCallback((id: string) => investors.find(i => i.id === id), [investors])
   const getBalanceById            = useCallback((id: string) => balances.find(b => b.id === id), [balances])
@@ -130,9 +173,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      investors, transactions, balances, recentTransactions, loading,
+      investors, transactions, balances, trashedBalances, recentTransactions, loading,
       addTransaction, updateTransaction, deleteTransaction,
-      addInvestor, updateInvestor,
+      addInvestor, updateInvestor, deleteInvestor, restoreInvestor, permanentlyDeleteInvestor,
       getInvestorById, getBalanceById, getTransactionsByInvestor,
     }}>
       {children}

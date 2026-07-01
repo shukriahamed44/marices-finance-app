@@ -13,7 +13,8 @@ create table if not exists investors (
   notes       text,
   status      text not null default 'active' check (status in ('active','closed','placeholder')),
   created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  updated_at  timestamptz not null default now(),
+  deleted_at  timestamptz
 );
 
 -- Transactions

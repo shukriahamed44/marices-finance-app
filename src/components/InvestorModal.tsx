@@ -11,13 +11,14 @@ interface Props {
 }
 
 export default function InvestorModal({ open, onClose, investor }: Props) {
-  const { addInvestor, updateInvestor } = useApp()
+  const { addInvestor, updateInvestor, deleteInvestor } = useApp()
   const [name, setName]         = useState('')
   const [rate, setRate]         = useState('')
   const [phone, setPhone]       = useState('')
   const [notes, setNotes]       = useState('')
   const [status, setStatus]     = useState<Investor['status']>('active')
   const [error, setError]       = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -27,8 +28,16 @@ export default function InvestorModal({ open, onClose, investor }: Props) {
       setNotes(investor?.notes ?? '')
       setStatus(investor?.status ?? 'active')
       setError('')
+      setConfirmDelete(false)
     }
   }, [open, investor])
+
+  function handleDelete() {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    if (!investor) return
+    deleteInvestor(investor.id)
+    onClose()
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +48,7 @@ export default function InvestorModal({ open, onClose, investor }: Props) {
       phone: phone || null,
       notes: notes || null,
       status,
+      deleted_at: null,
     }
     if (investor) {
       updateInvestor(investor.id, payload)
@@ -97,10 +107,25 @@ export default function InvestorModal({ open, onClose, investor }: Props) {
             </div>
           </div>
           {error && <p className="text-[13px] text-apple-red font-medium">{error}</p>}
-          <button type="submit" className="apple-btn-primary w-full flex items-center justify-center gap-2 py-3 mt-2">
-            <UserPlus size={17} strokeWidth={2.5} />
-            {investor ? 'Save Changes' : 'Add Investor'}
-          </button>
+          <div className="flex gap-3 mt-2">
+            {investor && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className={cn('flex-1 py-3 rounded-apple text-[15px] font-semibold transition-all active:scale-[0.98]',
+                  confirmDelete
+                    ? 'bg-apple-red text-white'
+                    : 'bg-apple-red-light text-apple-red'
+                )}
+              >
+                {confirmDelete ? 'Confirm — Move to Trash' : 'Move to Trash'}
+              </button>
+            )}
+            <button type="submit" className={cn('apple-btn-primary flex items-center justify-center gap-2 py-3', investor ? 'flex-[2]' : 'w-full')}>
+              <UserPlus size={17} strokeWidth={2.5} />
+              {investor ? 'Save Changes' : 'Add Investor'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

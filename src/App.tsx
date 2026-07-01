@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Clients from './pages/Clients'
 import ClientDetail from './pages/ClientDetail'
 import Reports from './pages/Reports'
+import Trash from './pages/Trash'
 import CFAuth from './pages/cf/CFAuth'
 import CFLayout from './components/cf/CFLayout'
 import CFDashboard from './pages/cf/CFDashboard'
@@ -49,6 +50,7 @@ function AppRoutes() {
         <Route path="/clients"         element={<Clients />} />
         <Route path="/clients/:id"     element={<ClientDetail />} />
         <Route path="/reports"         element={<Reports />} />
+        <Route path="/trash"           element={<Trash />} />
         <Route path="*"                element={<Navigate to="/dashboard" replace />} />
       </Route>
 

@@ -18,6 +18,7 @@ export interface Investor {
   notes: string | null
   status: InvestorStatus
   created_at: string
+  deleted_at: string | null
 }
 
 export interface Transaction {

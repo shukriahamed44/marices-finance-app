@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, BarChart2, TrendingUp, LogOut, X } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, TrendingUp, LogOut, X, Trash2 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
@@ -8,6 +8,7 @@ const NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/clients',   icon: Users,           label: 'Clients'   },
   { to: '/reports',   icon: BarChart2,       label: 'Reports'   },
+  { to: '/trash',     icon: Trash2,          label: 'Trash'     },
 ]
 
 interface SidebarProps {

@@ -1,15 +1,15 @@
 import type { Investor, Transaction } from './types'
 
 export const MOCK_INVESTORS: Investor[] = [
-  { id: '1', name: 'Karuna Anna',    return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2025-05-11T00:00:00Z' },
-  { id: '2', name: 'Lathurshan',     return_rate: null, phone: null, notes: null, status: 'active',      created_at: '2025-11-10T00:00:00Z' },
-  { id: '3', name: 'Budika',         return_rate: 10,   phone: null, notes: null, status: 'closed',      created_at: '2025-06-14T00:00:00Z' },
-  { id: '4', name: 'Dinesh',         return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z' },
-  { id: '5', name: 'Dilenth',        return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z' },
-  { id: '6', name: 'Rukshan Anna',   return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2026-05-10T00:00:00Z' },
-  { id: '7', name: 'Rushanthan',     return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2026-05-11T00:00:00Z' },
-  { id: '8', name: 'Shaya',          return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z' },
-  { id: '9', name: 'Raihan',         return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z' },
+  { id: '1', name: 'Karuna Anna',    return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2025-05-11T00:00:00Z', deleted_at: null },
+  { id: '2', name: 'Lathurshan',     return_rate: null, phone: null, notes: null, status: 'active',      created_at: '2025-11-10T00:00:00Z', deleted_at: null },
+  { id: '3', name: 'Budika',         return_rate: 10,   phone: null, notes: null, status: 'closed',      created_at: '2025-06-14T00:00:00Z', deleted_at: null },
+  { id: '4', name: 'Dinesh',         return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z', deleted_at: null },
+  { id: '5', name: 'Dilenth',        return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z', deleted_at: null },
+  { id: '6', name: 'Rukshan Anna',   return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2026-05-10T00:00:00Z', deleted_at: null },
+  { id: '7', name: 'Rushanthan',     return_rate: 7,    phone: null, notes: null, status: 'active',      created_at: '2026-05-11T00:00:00Z', deleted_at: null },
+  { id: '8', name: 'Shaya',          return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z', deleted_at: null },
+  { id: '9', name: 'Raihan',         return_rate: 7,    phone: null, notes: null, status: 'placeholder', created_at: '2025-01-01T00:00:00Z', deleted_at: null },
 ]
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
